@@ -1,6 +1,7 @@
 # xw-data-toolkit
 
-
+## Architecture
+![image.png](./image.png)
 
 ## Getting started
 
