@@ -1,7 +1,7 @@
 # xw-data-toolkit
 
 ## Architecture
-![image.png](./image.png)
+![xw_data_toolkit_architecture.png](./xw_data_toolkit_architecture.png)
 
 ## Getting started
 
