@@ -5,6 +5,8 @@ from aws_cdk import (
 
 from constructs import Construct
 
+from .copy_example_data import add_copy_scoofy_example_data
+
 
 class XwBatchStack(aws_cdk.Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
@@ -17,3 +19,6 @@ class XwBatchStack(aws_cdk.Stack):
             # TODO: define a name in some config
             # bucket_name="xw-batch-bucket-raw-" + os.environ("ENVIRONMENT_NAME"),
         )
+
+        # Add stuff for some example data
+        example_data_location = add_copy_scoofy_example_data(self, self.s3_raw_bucket)
