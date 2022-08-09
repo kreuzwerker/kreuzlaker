@@ -1,2 +1,14 @@
-aws-cdk-lib==2.31.1
-constructs>=10.0.0,<11.0.0
+# Autogenerate from requirements.txt.in by 'make update-packages' at 2022-08-09T13:41
+# DO NOT CHANGE, changes will be overwritten!
+
+attrs==21.4.0
+aws-cdk-lib==2.36.0
+cattrs==22.1.0
+constructs==10.1.71
+exceptiongroup==1.0.0rc8
+jsii==1.63.2
+publication==0.0.3
+python-dateutil==2.8.2
+six==1.16.0
+typeguard==2.13.3
+typing_extensions==4.3.0

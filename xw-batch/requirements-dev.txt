@@ -1,1 +1,9 @@
-pytest==6.2.5
+pytest
+black
+isort
+flake8
+mypy
+
+# https://github.com/emcpow2/awslambdaric-stubs
+awslambdaric-stubs
+boto3-stubs[all]
