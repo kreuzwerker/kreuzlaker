@@ -1,1 +1,16 @@
-pytest==6.2.5
+# Include the pinned down version of the regular packages
+# to make sure we never update these when installing dev/testing tools
+-r requirements.txt
+
+# Use the rest un-versioned for now to get any possible problematic
+# updates one by one instead of in bulk
+
+pytest
+black
+isort
+flake8
+mypy
+
+# https://github.com/emcpow2/awslambdaric-stubs
+awslambdaric-stubs
+boto3-stubs[all]
