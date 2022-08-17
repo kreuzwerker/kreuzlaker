@@ -80,19 +80,19 @@ lint: format  ## Run all linters
 # tools
 .PHONY: black
 black: .venv/install-dev-packages-stamp  ## Format on all python files with black
-	python -m black $(PYTHON_SOURCE)
+	.venv/bin/python -m black $(PYTHON_SOURCE)
 
 .PHONY: isort
 isort: .venv/install-dev-packages-stamp  ## Sort all imports with isort in pyton files
-	python -m isort $(PYTHON_SOURCE)
+	.venv/bin/python -m isort $(PYTHON_SOURCE)
 
 .PHONY: flake8
 flake8: .venv/install-dev-packages-stamp  ## Run flake8 on all python files
-	python -m flake8 $(PYTHON_SOURCE)
+	.venv/bin/python -m flake8 $(PYTHON_SOURCE)
 
 .PHONY: mypy
 mypy: .venv/install-dev-packages-stamp ## Run mypy on all python files
-	python -m mypy $(PYTHON_SOURCE)
+	.venv/bin/python -m mypy $(PYTHON_SOURCE)
 
 help:     ## Show this help.
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
