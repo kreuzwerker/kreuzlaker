@@ -7,3 +7,6 @@ __pycache__
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# Node packages (from cdk cli)
+/node_modules/
