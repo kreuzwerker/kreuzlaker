@@ -108,5 +108,10 @@ flake8: .venv/install-dev-packages-stamp  ## Run flake8 on all python files
 mypy: .venv/install-dev-packages-stamp ## Run mypy on all python files
 	.venv/bin/python -m mypy $(PYTHON_SOURCE)
 
+.PHONY: shell
+shell: .venv/install-packages-stamp .venv/install-dev-packages-stamp node_modules/install-packages-stamp ## Run a shell with all required (incl. dev) commands in PATH
+	# $${} to use the environment variables and not the (implicit) variables from the makefile
+	@export PATH=$(PWD)/node_modules/.bin:$${PATH} && source .venv/bin/activate && exec $${SHELL}
+
 help:     ## Show this help.
 	@egrep -h '\s##\s' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m  %-30s\033[0m %s\n", $$1, $$2}'
