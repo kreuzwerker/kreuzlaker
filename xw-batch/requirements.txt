@@ -1,12 +1,12 @@
-# Autogenerate from requirements.txt.in by 'make update-packages' at 2022-08-09T13:41
+# Autogenerate from requirements.txt.in by 'make update-packages' at 2022-08-17T15:52
 # DO NOT CHANGE, changes will be overwritten!
 
-attrs==21.4.0
-aws-cdk-lib==2.36.0
+attrs==22.1.0
+aws-cdk-lib==2.38.0
 cattrs==22.1.0
-constructs==10.1.71
+constructs==10.1.78
 exceptiongroup==1.0.0rc8
-jsii==1.63.2
+jsii==1.64.0
 publication==0.0.3
 python-dateutil==2.8.2
 six==1.16.0
