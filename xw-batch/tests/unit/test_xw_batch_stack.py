@@ -68,3 +68,7 @@ def test_all_s3_buckets_honour_stack_removal_policy(
             assert {"Key": "aws-cdk:auto-delete-objects", "Value": "true"} in resource[
                 "Properties"
             ]["Tags"]
+
+
+def test_org_users_and_groups_snapshot(snapshot, template: Template):
+    assert template.to_json() == snapshot
