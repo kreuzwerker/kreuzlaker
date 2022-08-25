@@ -1,0 +1,94 @@
+# name: test_org_users_and_groups_snapshot
+  dict({
+    'Parameters': dict({
+      'BootstrapVersion': dict({
+        'Default': '/cdk-bootstrap/hnb659fds/version',
+        'Description': 'Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]',
+        'Type': 'AWS::SSM::Parameter::Value<String>',
+      }),
+    }),
+    'Resources': dict({
+      'OrgUsersAndGroupsdatalakedebuggingE8ABA7E1': dict({
+        'Properties': dict({
+          'GroupName': 'DataLakeDebugging',
+        }),
+        'Type': 'AWS::IAM::Group',
+      }),
+      'OrgUsersAndGroupsexampleuser73FA0DA9': dict({
+        'Properties': dict({
+          'Groups': list([
+            dict({
+              'Ref': 'OrgUsersAndGroupsdatalakedebuggingE8ABA7E1',
+            }),
+          ]),
+          'LoginProfile': dict({
+            'Password': 'N0tV3ryS3cr3t!',
+            'PasswordResetRequired': True,
+          }),
+          'ManagedPolicyArns': list([
+            dict({
+              'Ref': 'OrgUsersAndGroupspolicyallowpasswordchanges91D72591',
+            }),
+          ]),
+          'UserName': 'example.user',
+        }),
+        'Type': 'AWS::IAM::User',
+      }),
+      'OrgUsersAndGroupspolicyallowpasswordchanges91D72591': dict({
+        'Properties': dict({
+          'Description': '',
+          'ManagedPolicyName': 'AllowPasswordChanges',
+          'Path': '/',
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'iam:GetAccountPasswordPolicy',
+                'Effect': 'Allow',
+                'Resource': '*',
+                'Sid': 'ViewAccountPasswordRequirements',
+              }),
+              dict({
+                'Action': list([
+                  'iam:GetUser',
+                  'iam:ChangePassword',
+                ]),
+                'Effect': 'Allow',
+                'Resource': 'arn:aws:iam::*:user/${aws:username}',
+                'Sid': 'ChangeOwnPassword',
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+        }),
+        'Type': 'AWS::IAM::ManagedPolicy',
+      }),
+    }),
+    'Rules': dict({
+      'CheckBootstrapVersion': dict({
+        'Assertions': list([
+          dict({
+            'Assert': dict({
+              'Fn::Not': list([
+                dict({
+                  'Fn::Contains': list([
+                    list([
+                      '1',
+                      '2',
+                      '3',
+                      '4',
+                      '5',
+                    ]),
+                    dict({
+                      'Ref': 'BootstrapVersion',
+                    }),
+                  ]),
+                }),
+              ]),
+            }),
+            'AssertDescription': "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+          }),
+        ]),
+      }),
+    }),
+  })
+# ---
