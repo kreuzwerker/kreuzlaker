@@ -98,5 +98,46 @@ def test_all_s3_buckets_honour_stack_removal_policy(
             ]["Tags"]
 
 
+def _join_arn_ref(arn_ref: dict, add_on: str):
+    return {"Fn::Join": ["", [arn_ref, add_on]]}
+
+
+def test_raw_data_s3_bucket_access_for_debugging_user(
+    template: Template, stack: XwBatchStack
+) -> None:
+    # stack.resolve() returns CF references to items by name or arn (maybe more?)
+    # The api doc is ... unhelpful: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.Stack.html#resolveobj
+    ref_group_name = stack.resolve(
+        stack.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING).group_name
+    )
+    ref_bucket_arn = stack.resolve(stack.s3_raw_bucket.bucket_arn)
+    wanted_bucket_resources = [
+        # The bucket itself
+        ref_bucket_arn,
+        # The items in the bucket
+        _join_arn_ref(ref_bucket_arn, "/*"),
+    ]
+    template.has_resource_properties(
+        "AWS::IAM::Policy",
+        {
+            "Groups": Match.array_with([ref_group_name]),
+            "PolicyDocument": {
+                "Statement": [
+                    {
+                        "Action": [
+                            "s3:GetObject*",
+                            "s3:GetBucket*",
+                            "s3:List*",
+                        ],
+                        "Effect": "Allow",
+                        "Resource": Match.array_with(wanted_bucket_resources),
+                    },
+                ],
+                "Version": "2012-10-17",
+            },
+        },
+    )
+
+
 def test_whole_stack_snapshot(snapshot, template: Template):
     assert template.to_json() == snapshot
