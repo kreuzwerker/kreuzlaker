@@ -68,6 +68,10 @@ class XwBatchStack(aws_cdk.Stack):
         role.add_managed_policy(gluePolicy)
         self.s3_raw_bucket.grant_read_write(role)
 
+        self.s3_raw_bucket.grant_read(
+            self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING)
+        )
+
         for table_path in raw_data_tables:
             table_id = table_path.replace("/", "-")
             # glue crawlers for the raw data
@@ -103,3 +107,15 @@ class XwBatchStack(aws_cdk.Stack):
             )
 
             # TODO: glue job to convert the table to parquet
+
+        # Give a debugging group access to the logs
+        # TODO: maybe restrict to glue logs? But if we get rif of the crawler, there are no logs,
+        #       so lets keep it broad for now
+        cloudwatch_read_only_policy = (
+            aws_iam.ManagedPolicy.from_aws_managed_policy_name(
+                "CloudWatchReadOnlyAccess"
+            )
+        )
+        self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING).add_managed_policy(
+            cloudwatch_read_only_policy
+        )

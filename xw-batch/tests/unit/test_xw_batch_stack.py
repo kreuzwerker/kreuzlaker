@@ -1,6 +1,8 @@
 import aws_cdk
 import pytest
-from aws_cdk.assertions import Template
+from aws_cdk.assertions import Match, Template
+
+from xw_batch.users_and_groups import GROUP_DATA_LAKE_DEBUGGING
 
 # In InteliJ, you have to mark the xw_batch folder as "source folder"
 from xw_batch.xw_batch_stack import XwBatchStack
@@ -25,6 +27,32 @@ def test_cron_lambda_created(template: Template):
         props={
             "Handler": "copyjob_for_example_data.sync_bucket_uri",
             "Runtime": "python3.9",
+        },
+    )
+
+
+def test_cloudwatch_access_for_debugging_user(
+    template: Template, stack: XwBatchStack
+) -> None:
+    template.has_resource_properties(
+        "AWS::IAM::Group",
+        {
+            "GroupName": GROUP_DATA_LAKE_DEBUGGING,
+            # we need array_with to not fail if we would add more than one policy
+            "ManagedPolicyArns": Match.array_with(
+                [
+                    {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "arn:",
+                                {"Ref": "AWS::Partition"},
+                                ":iam::aws:policy/CloudWatchReadOnlyAccess",
+                            ],
+                        ]
+                    }
+                ]
+            ),
         },
     )
 
