@@ -34,6 +34,7 @@ def test_raw_data_s3_bucket_created(template: assertions.Template):
     # TODO: find a better way to test for the existence of the exact amount of buckets...
     template.resource_count_is("AWS::S3::Bucket", 1)
 
+    # This checks the default removal policy if not explicitly set
     template.has_resource(
         "AWS::S3::Bucket",
         {
@@ -41,3 +42,29 @@ def test_raw_data_s3_bucket_created(template: assertions.Template):
             "UpdateReplacePolicy": "Retain",
         },
     )
+
+
+@pytest.mark.parametrize(
+    "keep_data_resources_on_destroy, expected_policy, match_tags",
+    [
+        (True, "Retain", False),
+        (False, "Delete", True),
+    ],
+)
+def test_all_s3_buckets_honour_stack_removal_policy(
+    keep_data_resources_on_destroy: bool, expected_policy: str, match_tags: bool
+):
+    app = core.App()
+    stack = XwBatchStack(
+        app, "xw-batch", keep_data_resources_on_destroy=keep_data_resources_on_destroy
+    )
+    template = assertions.Template.from_stack(stack)
+
+    for name, resource in template.find_resources(type="AWS::S3::Bucket").items():
+        print(resource)
+        assert resource["DeletionPolicy"] == expected_policy
+        assert resource["UpdateReplacePolicy"] == expected_policy
+        if match_tags:
+            assert {"Key": "aws-cdk:auto-delete-objects", "Value": "true"} in resource[
+                "Properties"
+            ]["Tags"]

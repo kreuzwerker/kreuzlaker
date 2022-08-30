@@ -24,5 +24,19 @@ See also the [Glue best practises](https://docs.aws.amazon.com/athena/latest/ug/
 - Do not use exclude patterns with crawlers (e.g. adding different file formats into the same prefix, but only using one
   for the table), as Athena does not use such patterns and would result in errors.
 - Do not mix multiple schemas into the same s3 bucket prefix, use different prefixes. Glue databases work per prefix and
-  e.g. Glue crawlers cannot recognise a common schema or Athena throws errors because it expects all files in a prefix have the
-  same schema.
+  e.g. Glue crawlers cannot recognise a common schema or Athena throws errors because it expects all files in a prefix
+  have the same schema.
+
+### CDK
+
+- Every secret should be in secret manager and the app itself should get it from there -> do not put it into infra code,
+  not even via env variables. If you want secrets in version control, use some system which encrypts it for an AWS
+  groups and mirrors it to secrets manager during deployment. Example:
+  [cdk-soeps-secrets](https://github.com/markussiebert/cdk-sops-secrets).
+- Use `aws_cdk.Stages` (~ "environments") to combine `Stacks` and isolate stacks in different environments from each
+  other.
+- Add all stages/environments to `app.py`: prod, staging, dev,... including all config values. Only dev might get
+  something from envs (e.g. for personal accounts, bucket names, etc), all others should be hard
+  coded (secrets come from secret manager, so no harm!). On python, every config item should then be passed to the stack
+  and from there to any construct which needs it.
+- Nothing apart from `app.py` should use env variables.

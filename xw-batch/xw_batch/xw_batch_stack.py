@@ -6,8 +6,25 @@ from .copy_example_data import add_copy_scoofy_example_data
 
 
 class XwBatchStack(aws_cdk.Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        *,
+        keep_data_resources_on_destroy: bool = True,
+        **kwargs,
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
+
+        stack_removal_policy = (
+            aws_cdk.RemovalPolicy.RETAIN
+            if keep_data_resources_on_destroy
+            else aws_cdk.RemovalPolicy.DESTROY
+        )
+        # the argument can only be non-None when we DESTROY the bucket
+        stack_auto_delete_objects_in_s3 = (
+            None if keep_data_resources_on_destroy else True
+        )
 
         # s3 bucket for raw data
         self.s3_raw_bucket = aws_s3.Bucket(
@@ -15,6 +32,8 @@ class XwBatchStack(aws_cdk.Stack):
             id="xw_batch_bucket_raw",
             # TODO: define a name in some config
             # bucket_name="xw-batch-bucket-raw-" + os.environ("ENVIRONMENT_NAME"),
+            removal_policy=stack_removal_policy,
+            auto_delete_objects=stack_auto_delete_objects_in_s3,
         )
 
         # Add stuff for some example data
