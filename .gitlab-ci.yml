@@ -1,0 +1,106 @@
+# we need an image with both nodejs and python on it, otherwise the tests won't work
+# Installing one or the other into the official nodejs/python images takes too much time
+# TODO: try to install one or the other locally and cache it?
+image: nikolaik/python-nodejs:python3.10-nodejs18-bullseye
+
+# Our shared runner is tagged with "docker", so all jobs need that as a tag to run on that runner
+
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+# Pip's cache doesn't store the python packages
+# https://pip.pypa.io/en/stable/reference/pip_install/#caching
+#
+# If you want to also cache the installed packages, you have to install
+# them in a virtualenv and cache it as well.
+cache:
+  - key:
+      files:
+        - xw-batch/requirements.txt
+        - xw-batch/requirements-dev.txt
+    paths:
+      - .cache/pip
+      - xw-batch/venv/
+  - key:
+      files:
+        - xw-batch/package-lock.json
+    paths:
+      - xw-batch/node_modules/
+      - .cache/npm
+
+# These commands are concat'ed before the script section in all the jobs below
+before_script:
+  - cd xw-batch # every later job assumes we are in this directory!
+  - python3 --version  # For debugging
+  - python3 -m venv venv
+  - source venv/bin/activate
+  - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
+  - export PATH=$PATH:./node_modules/.bin # to make the cdk command available
+  - node --version && npm root && command -v cdk   # For debugging
+
+stages: # List of stages for jobs, and their order of execution
+  - install-packages
+  - run-static-checks
+  - run-tests
+
+install-packages:
+  stage: install-packages
+  tags:
+    - docker
+  script:
+    - echo "Installing packages"
+    - python3 -m pip install -r requirements.txt
+    - python3 -m pip install -r requirements-dev.txt
+    - echo "Installation of packages complete."
+
+mypy:
+  stage: run-static-checks
+  tags:
+    - docker
+  needs: [ 'install-packages' ]
+  script:
+    - echo "Running mypy..."
+    - python3 -m mypy xw_batch tests lambda
+    - echo "No mypy issues found."
+
+black:
+  stage: run-static-checks
+  tags:
+    - docker
+  needs: [ 'install-packages' ]
+  script:
+    - echo "Running black..."
+    - python3 -m black --check --verbose -- xw_batch tests lambda
+    - echo "No black issues found."
+
+isort:
+  stage: run-static-checks
+  tags:
+    - docker
+  needs: [ 'install-packages' ]
+  script:
+    - echo "Running isort..."
+    - python3 -m isort --check-only xw_batch tests lambda
+    - echo "No isort issues found."
+
+flake8:
+  stage: run-static-checks
+  tags:
+    - docker
+  needs: [ 'install-packages' ]
+  script:
+    - echo "Running flake8..."
+    - python3 -m flake8 xw_batch tests lambda
+    - echo "No flake8 issues found."
+
+pytest:
+  stage: run-tests
+  tags:
+    - docker
+  needs: [ 'install-packages' ]
+  script:
+    - echo "Running pytest..."
+    - python3 -m pytest tests
+    - echo "No pytest issues found."
