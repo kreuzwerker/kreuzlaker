@@ -1,58 +1,59 @@
+# XW Data Batch Stack
 
-# Welcome to your CDK Python project!
+## Preparation
 
-This is a blank project for CDK development with Python.
-
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
-
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
-
-To manually create a virtualenv on MacOS and Linux:
-
-```
-$ python3 -m venv .venv
+```bash
+brew install git make python@3.10 node # all the rest gets installed into node.js/python environments
+git clone git@gitlab.kreuzwerker.de:engineering/data-engineering/xw-data-toolkit.git
+cd xw-data-toolkit
+# Setup all required node.js and python packages in environments
+make install-packages # only deploying via cdk 
+make install-dev-packages # for developing (deploy + test + lint)
+# Activate the environments -> adds cdk and all needed python commands into the path
+make shell
 ```
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
+## Deployment from local machines
 
-```
-$ source .venv/bin/activate
-```
+This assumes you have set up aws credentials which are usable by `aws`/`boto3`/`cdk` 
+(e.g. `export AWS_PROFILE=... && aws sso login` via SSO).
 
-If you are a Windows platform, you would activate the virtualenv like this:
+To deploy, run once `make bootstrap` and afterwards `make deploy`.
 
-```
-% .venv\Scripts\activate.bat
-```
+This will
+* create the python virtual environment in `.venv/`, if it doesn't exist
+* create a `node_modules/` subfolder with the required node.js packages, if it doesn't exist
+* install the required packages for both nodejs (cdk) and python (e.g. cdk packages)
+* run `cdk bootstrap` to deploy infrastructure needed by `cdk`.
+* run `cdk synth -o cdk.out` to synthesize the stack(s) in `cdk.out/`
+* run `cdk deploy -o cdk.out --hotswap dev/XwBatchStack` to deploy the dev stack which is defined in the synthesized
+  output in `cdk.out/`.
 
-Once the virtualenv is activated, you can install the required dependencies.
+To deploy again, run `make synth && make deploy` (just `make deploy` would deploy the old synthesized stack!).
 
-```
-$ pip install -r requirements.txt
-```
+Repeated runs of will of course reuse the python/node.js environments unless you change `requirements.txt.in`
+(or the derived `requirements.txt`) or `package-lock.json`.
 
-At this point you can now synthesize the CloudFormation template for this code.
+## Destroying the stack
 
-```
-$ cdk synth
-```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+To destroy the set-up `XwBatchStack` stack, run `make destroy`, which will make sure that the venv and node environments
+exist and run `cdk destroy`.
 
 ## Useful commands
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+* `make help`                 shows all the available makefile targets, which also cover some of the below cdk commands
+* `make bootstrap`            deploys needed cdk infrastructure into the currently active aws profile (run only once)
+* `make install-packages`     installs packages from requirements.txt (also creates the venv!)
+* `make install-dev-packages` installs additional packages from requirements-dev.txt needed for development
+* `make update-packages`      adds/updates packages from requirements.txt.in (recreates the venv!)
+* `make synth`                emits the synthesized CloudFormation template to the default output folder
+* `make deploy`               deploys the dev stack from the previously synthesized CF templates to AWS into 
+                              the currently active aws profile
+* `make destroy`              destroys the stack the currently active aws profile
+* `cdk ls`                    lists all stacks in the app
+* `cdk synth`                 emits the synthesized CloudFormation template
+* `cdk deploy <stack name>`   deploys this stack to your default AWS account/region
+* `cdk diff`                  compares deployed stack with current state
+* `cdk docs`                  opens CDK documentation
 
 Enjoy!
