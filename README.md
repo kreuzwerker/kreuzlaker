@@ -1,7 +1,7 @@
 # xw-data-toolkit
 
-## Architecture
-![image-1.png](./image-1.png)
+## Batch Architecture
+![xw batch architecture](./docs/xw-batch-architecture.png) ([link to excalidraw](https://excalidraw.com/#room=da880bb8f03ec9c46b51,BT7_6BAJuLkcX21F5Sbhzw))
 
 ## Getting started
 
