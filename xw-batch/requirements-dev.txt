@@ -14,3 +14,21 @@ mypy
 # https://github.com/emcpow2/awslambdaric-stubs
 awslambdaric-stubs
 boto3-stubs[all]
+
+# glue jobs
+
+# Unfortunately I couldn't find any versions for what's actually in glue 3.0,
+# so lets go by the supported python version: 3.7
+
+# Use a bit older versions which are still working with py3.7, which glue 3.0 uses
+# numpy 1.22 does not support py3.7 anymore
+numpy~=1.21
+# 1.3 is the last version which supports py3.7
+pandas~=1.3
+# from https://aws.amazon.com/blogs/big-data/introducing-aws-glue-3-0-with-optimized-apache-spark-3-1-runtime-for-faster-data-integration/
+pyspark==3.1.1
+boto3
+
+# Not available on pypi :-(
+# awsglue-local
+

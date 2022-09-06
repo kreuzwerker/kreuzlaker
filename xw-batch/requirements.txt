@@ -1,8 +1,9 @@
-# Autogenerate from requirements.txt.in by 'make update-packages' at 2022-09-07T15:09
+# Autogenerate from requirements.txt.in by 'make update-packages' at 2022-09-07T17:33
 # DO NOT CHANGE, changes will be overwritten!
 
 attrs==22.1.0
 aws-cdk-lib==2.40.0
+aws-cdk.aws-glue-alpha==2.40.0a0
 cattrs==22.1.0
 colored==1.4.3
 constructs==10.1.95

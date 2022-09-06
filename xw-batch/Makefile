@@ -1,4 +1,4 @@
-PYTHON_SOURCE:=xw_batch tests lambdas app.py
+PYTHON_SOURCE:=xw_batch tests lambdas glue app.py
 
 # The default stack to deploy
 # Overwrite with make CDK_STACK_NAME=prod/XwBatchStack all

@@ -8,6 +8,87 @@
       }),
     }),
     'Resources': dict({
+      'converttoparquetjourneys2F8DA4E1': dict({
+        'Properties': dict({
+          'Command': dict({
+            'Name': 'glueetl',
+            'PythonVersion': '3',
+            'ScriptLocation': dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  's3://',
+                  dict({
+                    'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+                  }),
+                  '/a0f7b030c2c343dbc460b01b28ed5da6e067e3a014ef45a1b0ae04b5e2b2aae2.py',
+                ]),
+              ]),
+            }),
+          }),
+          'DefaultArguments': dict({
+            '--SOURCE_BUCKET_URI': dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  's3://',
+                  dict({
+                    'Ref': 'xwbatchbucketraw82D91BD7',
+                  }),
+                  '/raw/scoofy/journeys/',
+                ]),
+              ]),
+            }),
+            '--SOURCE_COMPRESSION_TYPE': 'gzip',
+            '--SOURCE_FORMAT': 'json',
+            '--SOURCE_PARTITION_VAR': 'start_dt',
+            '--TARGET_BUCKET_URI': dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  's3://',
+                  dict({
+                    'Ref': 'xwbatchbucketraw82D91BD7',
+                  }),
+                  '/converted/journeys',
+                ]),
+              ]),
+            }),
+            '--TARGET_COMPRESSION_TYPE': 'snappy',
+            '--TARGET_DB_NAME': 'data_lake_converted',
+            '--TARGET_FORMAT': 'glueparquet',
+            '--TARGET_TABLE_NAME': 'journeys',
+            '--enable-continuous-cloudwatch-log': 'true',
+            '--enable-continuous-log-filter': 'true',
+            '--extra-py-files': dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  's3://',
+                  dict({
+                    'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+                  }),
+                  '/75319734a952b0132e63ffecf345eb0e47cac90ecd878db57b38e4aaf85e7f51.zip',
+                ]),
+              ]),
+            }),
+            '--job-bookmark-option': 'job-bookmark-enable',
+            '--job-language': 'python',
+          }),
+          'Description': "Converts raw data to snappy-compressed parquet files partitioned on _created_at and adds it as a new table into the 'data_lake_converted' database ",
+          'GlueVersion': '3.0',
+          'MaxRetries': 1,
+          'NumberOfWorkers': 2,
+          'Role': dict({
+            'Fn::GetAtt': list([
+              's3rawconvertedaccessglue81E2EC83',
+              'Arn',
+            ]),
+          }),
+          'WorkerType': 'G.1X',
+        }),
+        'Type': 'AWS::Glue::Job',
+      }),
       'copyscoofyexampledataAwsCliLayer0B12F367': dict({
         'Properties': dict({
           'Content': dict({
@@ -31,7 +112,7 @@
             'S3Bucket': dict({
               'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
             }),
-            'S3Key': '82fd8dade45f9a7568b81eb1425bfa6dfdf20ff750210274d12e3b5367426f6b.zip',
+            'S3Key': '2f222a702c386229901f889a0ccf80da74b272ef467e20323bafafe45ef574bf.zip',
           }),
           'Environment': dict({
             'Variables': dict({
@@ -204,6 +285,17 @@
           }),
         }),
         'Type': 'AWS::Lambda::Permission',
+      }),
+      'datalakeconvertedF1701755': dict({
+        'Properties': dict({
+          'CatalogId': dict({
+            'Ref': 'AWS::AccountId',
+          }),
+          'DatabaseInput': dict({
+            'Name': 'data_lake_converted',
+          }),
+        }),
+        'Type': 'AWS::Glue::Database',
       }),
       'orgusersandgroupsdatalakedebugging3664E396': dict({
         'Properties': dict({
@@ -414,18 +506,171 @@
         }),
         'Type': 'AWS::IAM::Policy',
       }),
-      'triggerrawcrawlerrawscoofyjourneys': dict({
+      's3rawconvertedaccessglue81E2EC83': dict({
         'Properties': dict({
-          'Actions': list([
+          'AssumeRolePolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'sts:AssumeRole',
+                'Effect': 'Allow',
+                'Principal': dict({
+                  'Service': 'glue.amazonaws.com',
+                }),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'ManagedPolicyArns': list([
             dict({
-              'CrawlerName': 'rawcrawler--raw-scoofy-journeys-',
+              'Fn::Join': list([
+                '',
+                list([
+                  'arn:',
+                  dict({
+                    'Ref': 'AWS::Partition',
+                  }),
+                  ':iam::aws:policy/service-role/AWSGlueServiceRole',
+                ]),
+              ]),
             }),
           ]),
-          'Schedule': 'cron(15 * * * ? *)',
-          'StartOnCreation': True,
-          'Type': 'SCHEDULED',
         }),
-        'Type': 'AWS::Glue::Trigger',
+        'Type': 'AWS::IAM::Role',
+      }),
+      's3rawconvertedaccessglueDefaultPolicy038FBE8D': dict({
+        'Properties': dict({
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  's3:GetObject*',
+                  's3:GetBucket*',
+                  's3:List*',
+                  's3:DeleteObject*',
+                  's3:PutObject',
+                  's3:PutObjectLegalHold',
+                  's3:PutObjectRetention',
+                  's3:PutObjectTagging',
+                  's3:PutObjectVersionTagging',
+                  's3:Abort*',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::GetAtt': list([
+                      'xwbatchbucketraw82D91BD7',
+                      'Arn',
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'xwbatchbucketraw82D91BD7',
+                            'Arn',
+                          ]),
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+              dict({
+                'Action': list([
+                  's3:GetObject*',
+                  's3:GetBucket*',
+                  's3:List*',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:',
+                        dict({
+                          'Ref': 'AWS::Partition',
+                        }),
+                        ':s3:::',
+                        dict({
+                          'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+                        }),
+                      ]),
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:',
+                        dict({
+                          'Ref': 'AWS::Partition',
+                        }),
+                        ':s3:::',
+                        dict({
+                          'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+                        }),
+                        '/75319734a952b0132e63ffecf345eb0e47cac90ecd878db57b38e4aaf85e7f51.zip',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+              dict({
+                'Action': list([
+                  's3:GetObject*',
+                  's3:GetBucket*',
+                  's3:List*',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:',
+                        dict({
+                          'Ref': 'AWS::Partition',
+                        }),
+                        ':s3:::',
+                        dict({
+                          'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+                        }),
+                      ]),
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:',
+                        dict({
+                          'Ref': 'AWS::Partition',
+                        }),
+                        ':s3:::',
+                        dict({
+                          'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'PolicyName': 's3rawconvertedaccessglueDefaultPolicy038FBE8D',
+          'Roles': list([
+            dict({
+              'Ref': 's3rawconvertedaccessglue81E2EC83',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Policy',
       }),
       'xwbatchbucketraw82D91BD7': dict({
         'DeletionPolicy': 'Retain',
