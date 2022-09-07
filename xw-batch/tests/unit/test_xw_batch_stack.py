@@ -1,6 +1,6 @@
-import aws_cdk as core
-import aws_cdk.assertions as assertions
+import aws_cdk
 import pytest
+from aws_cdk.assertions import Template
 
 # In InteliJ, you have to mark the xw_batch folder as "source folder"
 from xw_batch.xw_batch_stack import XwBatchStack
@@ -8,18 +8,18 @@ from xw_batch.xw_batch_stack import XwBatchStack
 
 @pytest.fixture(name="stack", scope="module")
 def stack_fixture() -> XwBatchStack:
-    app = core.App()
+    app = aws_cdk.App()
     stack = XwBatchStack(app, "xw-batch")
     return stack
 
 
 @pytest.fixture(name="template", scope="module")
-def template_fixture(stack: XwBatchStack) -> assertions.Template:
-    template = assertions.Template.from_stack(stack)
+def template_fixture(stack: XwBatchStack) -> Template:
+    template = Template.from_stack(stack)
     return template
 
 
-def test_cron_lambda_created(template: assertions.Template):
+def test_cron_lambda_created(template: Template):
     template.has_resource_properties(
         "AWS::Lambda::Function",
         props={
@@ -29,7 +29,7 @@ def test_cron_lambda_created(template: assertions.Template):
     )
 
 
-def test_raw_data_s3_bucket_created(template: assertions.Template):
+def test_raw_data_s3_bucket_created(template: Template):
     # this will fail when we add more buckets
     # TODO: find a better way to test for the existence of the exact amount of buckets...
     template.resource_count_is("AWS::S3::Bucket", 1)
@@ -54,11 +54,11 @@ def test_raw_data_s3_bucket_created(template: assertions.Template):
 def test_all_s3_buckets_honour_stack_removal_policy(
     keep_data_resources_on_destroy: bool, expected_policy: str, match_tags: bool
 ):
-    app = core.App()
+    app = aws_cdk.App()
     stack = XwBatchStack(
         app, "xw-batch", keep_data_resources_on_destroy=keep_data_resources_on_destroy
     )
-    template = assertions.Template.from_stack(stack)
+    template = Template.from_stack(stack)
 
     for name, resource in template.find_resources(type="AWS::S3::Bucket").items():
         print(resource)
