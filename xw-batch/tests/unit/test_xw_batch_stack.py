@@ -21,14 +21,13 @@ def template_fixture(stack: XwBatchStack) -> Template:
     return template
 
 
-def test_cron_lambda_created(template: Template):
-    template.has_resource_properties(
-        "AWS::Lambda::Function",
-        props={
-            "Handler": "copyjob_for_example_data.sync_bucket_uri",
-            "Runtime": "python3.9",
-        },
-    )
+def test_example_data_created(stack: XwBatchStack):
+    # We test the s3 data copy job elsewhere, just make sure we have created one here with the right config
+    assert stack.scoofy_example_data
+    assert stack.scoofy_example_data.source_bucket_name == "xw-d13g-scoofy-data-inputs"
+    assert stack.scoofy_example_data.source_bucket_path == "/data/journeys"
+    assert stack.scoofy_example_data.target_bucket_path == "/raw/scoofy/journeys/"
+    assert stack.scoofy_example_data.target_bucket == stack.s3_raw_bucket
 
 
 def test_cloudwatch_access_for_debugging_user(
