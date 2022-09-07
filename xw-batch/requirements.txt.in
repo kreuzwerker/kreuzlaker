@@ -1,2 +1,4 @@
 aws-cdk-lib>=2.36,<3
 constructs>=10.0.0,<11.0.0
+# For snapshot testing: https://github.com/tophat/syrupy
+syrupy>=3.0.0,<4.0

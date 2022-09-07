@@ -1,0 +1,363 @@
+# name: test_org_users_and_groups_snapshot
+  dict({
+    'Parameters': dict({
+      'BootstrapVersion': dict({
+        'Default': '/cdk-bootstrap/hnb659fds/version',
+        'Description': 'Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]',
+        'Type': 'AWS::SSM::Parameter::Value<String>',
+      }),
+    }),
+    'Resources': dict({
+      'AwsCliLayerF44AAF94': dict({
+        'Properties': dict({
+          'Content': dict({
+            'S3Bucket': dict({
+              'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+            }),
+            'S3Key': '731f24951dbe4e08bfc519dd7c23a4f7158528bd5557e38437b08292ab2a873c.zip',
+          }),
+          'Description': '/opt/awscli/aws',
+        }),
+        'Type': 'AWS::Lambda::LayerVersion',
+      }),
+      'copyscoofyexampledata0B8BA06E': dict({
+        'DependsOn': list([
+          'copyscoofyexampledataServiceRoleDefaultPolicy0DB6506A',
+          'copyscoofyexampledataServiceRole6090E616',
+        ]),
+        'Properties': dict({
+          'Code': dict({
+            'S3Bucket': dict({
+              'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+            }),
+            'S3Key': '5474f9695da9a766071ad17aebf7111cffc0b5cdf3c398acbdde6a8875438cb4.zip',
+          }),
+          'Environment': dict({
+            'Variables': dict({
+              'INPUT_BUCKET_URI': 's3://xw-d13g-scoofy-data-inputs/data/journeys',
+              'OUTPUT_BUCKET_URI': dict({
+                'Fn::Join': list([
+                  '',
+                  list([
+                    's3://',
+                    dict({
+                      'Ref': 'xwbatchbucketraw82D91BD7',
+                    }),
+                    '/raw/scoofy/journeys/',
+                  ]),
+                ]),
+              }),
+            }),
+          }),
+          'Handler': 'copyjob_for_example_data.sync_bucket_uri',
+          'Layers': list([
+            dict({
+              'Ref': 'AwsCliLayerF44AAF94',
+            }),
+          ]),
+          'Role': dict({
+            'Fn::GetAtt': list([
+              'copyscoofyexampledataServiceRole6090E616',
+              'Arn',
+            ]),
+          }),
+          'Runtime': 'python3.9',
+          'Timeout': 900,
+        }),
+        'Type': 'AWS::Lambda::Function',
+      }),
+      'copyscoofyexampledataServiceRole6090E616': dict({
+        'Properties': dict({
+          'AssumeRolePolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'sts:AssumeRole',
+                'Effect': 'Allow',
+                'Principal': dict({
+                  'Service': 'lambda.amazonaws.com',
+                }),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'ManagedPolicyArns': list([
+            dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  'arn:',
+                  dict({
+                    'Ref': 'AWS::Partition',
+                  }),
+                  ':iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+                ]),
+              ]),
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Role',
+      }),
+      'copyscoofyexampledataServiceRoleDefaultPolicy0DB6506A': dict({
+        'Properties': dict({
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  's3:GetObject*',
+                  's3:GetBucket*',
+                  's3:List*',
+                  's3:DeleteObject*',
+                  's3:PutObject',
+                  's3:PutObjectLegalHold',
+                  's3:PutObjectRetention',
+                  's3:PutObjectTagging',
+                  's3:PutObjectVersionTagging',
+                  's3:Abort*',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::GetAtt': list([
+                      'xwbatchbucketraw82D91BD7',
+                      'Arn',
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'xwbatchbucketraw82D91BD7',
+                            'Arn',
+                          ]),
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+              dict({
+                'Action': list([
+                  's3:GetObject',
+                  's3:ListBucket',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  'arn:aws:s3:::xw-d13g-scoofy-data-inputs/*',
+                  'arn:aws:s3:::xw-d13g-scoofy-data-inputs',
+                ]),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'PolicyName': 'copyscoofyexampledataServiceRoleDefaultPolicy0DB6506A',
+          'Roles': list([
+            dict({
+              'Ref': 'copyscoofyexampledataServiceRole6090E616',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Policy',
+      }),
+      'rawcrawlerrawscoofyjourneys': dict({
+        'Properties': dict({
+          'DatabaseName': 'data_lake_raw',
+          'Name': 'rawcrawler--raw-scoofy-journeys-',
+          'Role': dict({
+            'Fn::GetAtt': list([
+              's3rawaccessglueB6075F8D',
+              'Arn',
+            ]),
+          }),
+          'Targets': dict({
+            'S3Targets': list([
+              dict({
+                'Path': dict({
+                  'Fn::Join': list([
+                    '',
+                    list([
+                      's3://',
+                      dict({
+                        'Ref': 'xwbatchbucketraw82D91BD7',
+                      }),
+                      '/raw/scoofy/journeys/',
+                    ]),
+                  ]),
+                }),
+              }),
+            ]),
+          }),
+        }),
+        'Type': 'AWS::Glue::Crawler',
+      }),
+      's3rawaccessglueB6075F8D': dict({
+        'Properties': dict({
+          'AssumeRolePolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'sts:AssumeRole',
+                'Effect': 'Allow',
+                'Principal': dict({
+                  'Service': 'glue.amazonaws.com',
+                }),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'ManagedPolicyArns': list([
+            dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  'arn:',
+                  dict({
+                    'Ref': 'AWS::Partition',
+                  }),
+                  ':iam::aws:policy/service-role/AWSGlueServiceRole',
+                ]),
+              ]),
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Role',
+      }),
+      's3rawaccessglueDefaultPolicy31593007': dict({
+        'Properties': dict({
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  's3:GetObject*',
+                  's3:GetBucket*',
+                  's3:List*',
+                  's3:DeleteObject*',
+                  's3:PutObject',
+                  's3:PutObjectLegalHold',
+                  's3:PutObjectRetention',
+                  's3:PutObjectTagging',
+                  's3:PutObjectVersionTagging',
+                  's3:Abort*',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::GetAtt': list([
+                      'xwbatchbucketraw82D91BD7',
+                      'Arn',
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'xwbatchbucketraw82D91BD7',
+                            'Arn',
+                          ]),
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'PolicyName': 's3rawaccessglueDefaultPolicy31593007',
+          'Roles': list([
+            dict({
+              'Ref': 's3rawaccessglueB6075F8D',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Policy',
+      }),
+      'synchronrule56B26464': dict({
+        'Properties': dict({
+          'ScheduleExpression': 'cron(10 * ? * * *)',
+          'State': 'ENABLED',
+          'Targets': list([
+            dict({
+              'Arn': dict({
+                'Fn::GetAtt': list([
+                  'copyscoofyexampledata0B8BA06E',
+                  'Arn',
+                ]),
+              }),
+              'Id': 'Target0',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::Events::Rule',
+      }),
+      'synchronruleAllowEventRulexwbatchcopyscoofyexampledata53445A4F470A9808': dict({
+        'Properties': dict({
+          'Action': 'lambda:InvokeFunction',
+          'FunctionName': dict({
+            'Fn::GetAtt': list([
+              'copyscoofyexampledata0B8BA06E',
+              'Arn',
+            ]),
+          }),
+          'Principal': 'events.amazonaws.com',
+          'SourceArn': dict({
+            'Fn::GetAtt': list([
+              'synchronrule56B26464',
+              'Arn',
+            ]),
+          }),
+        }),
+        'Type': 'AWS::Lambda::Permission',
+      }),
+      'triggerrawcrawlerrawscoofyjourneys': dict({
+        'Properties': dict({
+          'Actions': list([
+            dict({
+              'CrawlerName': 'rawcrawler--raw-scoofy-journeys-',
+            }),
+          ]),
+          'Schedule': 'cron(15 * * * ? *)',
+          'StartOnCreation': True,
+          'Type': 'SCHEDULED',
+        }),
+        'Type': 'AWS::Glue::Trigger',
+      }),
+      'xwbatchbucketraw82D91BD7': dict({
+        'DeletionPolicy': 'Retain',
+        'Type': 'AWS::S3::Bucket',
+        'UpdateReplacePolicy': 'Retain',
+      }),
+    }),
+    'Rules': dict({
+      'CheckBootstrapVersion': dict({
+        'Assertions': list([
+          dict({
+            'Assert': dict({
+              'Fn::Not': list([
+                dict({
+                  'Fn::Contains': list([
+                    list([
+                      '1',
+                      '2',
+                      '3',
+                      '4',
+                      '5',
+                    ]),
+                    dict({
+                      'Ref': 'BootstrapVersion',
+                    }),
+                  ]),
+                }),
+              ]),
+            }),
+            'AssertDescription': "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+          }),
+        ]),
+      }),
+    }),
+  })
+# ---
