@@ -70,5 +70,5 @@ def test_all_s3_buckets_honour_stack_removal_policy(
             ]["Tags"]
 
 
-def test_org_users_and_groups_snapshot(snapshot, template: Template):
+def test_whole_stack_snapshot(snapshot, template: Template):
     assert template.to_json() == snapshot

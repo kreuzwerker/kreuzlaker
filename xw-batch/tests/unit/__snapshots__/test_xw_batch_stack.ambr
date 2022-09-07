@@ -1,4 +1,4 @@
-# name: test_org_users_and_groups_snapshot
+# name: test_whole_stack_snapshot
   dict({
     'Parameters': dict({
       'BootstrapVersion': dict({
