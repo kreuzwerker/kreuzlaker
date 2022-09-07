@@ -79,6 +79,9 @@ class XwBatchStack(aws_cdk.Stack):
             self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING)
         )
 
+        # Add a *MANUAL* crawler so that one could add these as tables to a raw database.
+        # Hourly crawling costs quite a lot of money for no gain as the schema never changes
+        # and all files are in the same prefix, so no additional partitions are added.
         for table_path in raw_data_table_paths:
             table_id = table_path.replace("/", "-")
             # glue crawlers for the raw data
@@ -96,21 +99,6 @@ class XwBatchStack(aws_cdk.Stack):
                         )
                     ]
                 ),
-            )
-
-            crawler_trigger_name = f"trigger-rawcrawler-{table_id}"
-
-            # TODO: use event based triggers
-            # This minute is adjusted from the minute used in the copy example data job, which uses cron_minute = 10
-            self.cron_minute = 15
-            self.cron_hour = "*"
-            aws_glue.CfnTrigger(
-                self,
-                crawler_trigger_name,
-                schedule=f"cron({self.cron_minute} {self.cron_hour} * * ? *)",
-                type="SCHEDULED",
-                actions=[aws_glue.CfnTrigger.ActionProperty(crawler_name=crawler_name)],
-                start_on_creation=True,
             )
 
             # TODO: glue job to convert the table to parquet
