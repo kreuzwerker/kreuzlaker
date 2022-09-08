@@ -4,6 +4,7 @@ import os
 import aws_cdk as cdk
 import constructs
 
+from xw_batch.users_and_groups import add_users_on_dev, add_users_on_prod
 from xw_batch.xw_batch_stack import XwBatchStack
 
 
@@ -36,6 +37,7 @@ prod_stage = XwDataStage(
     env=cdk.Environment(account="677474147593", region="eu-central-1"),
     keep_data_resources_on_destroy=True,
 )
+add_users_on_prod(prod_stage.batch_stack.users_and_groups)
 
 dev_stage = XwDataStage(
     app,
@@ -48,5 +50,6 @@ dev_stage = XwDataStage(
     ),
     keep_data_resources_on_destroy=False,
 )
+add_users_on_dev(dev_stage.batch_stack.users_and_groups)
 
 app.synth()

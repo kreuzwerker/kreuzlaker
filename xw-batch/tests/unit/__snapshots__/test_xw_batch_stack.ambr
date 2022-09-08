@@ -161,6 +161,100 @@
         }),
         'Type': 'AWS::IAM::Policy',
       }),
+      'orgusersandgroupsdatalakedebugging3664E396': dict({
+        'Properties': dict({
+          'GroupName': 'DataLakeDebugging',
+          'ManagedPolicyArns': list([
+            dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  'arn:',
+                  dict({
+                    'Ref': 'AWS::Partition',
+                  }),
+                  ':iam::aws:policy/CloudWatchReadOnlyAccess',
+                ]),
+              ]),
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Group',
+      }),
+      'orgusersandgroupsdatalakedebuggingDefaultPolicy32A36971': dict({
+        'Properties': dict({
+          'Groups': list([
+            dict({
+              'Ref': 'orgusersandgroupsdatalakedebugging3664E396',
+            }),
+          ]),
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  's3:GetObject*',
+                  's3:GetBucket*',
+                  's3:List*',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::GetAtt': list([
+                      'xwbatchbucketraw82D91BD7',
+                      'Arn',
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'xwbatchbucketraw82D91BD7',
+                            'Arn',
+                          ]),
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'PolicyName': 'orgusersandgroupsdatalakedebuggingDefaultPolicy32A36971',
+        }),
+        'Type': 'AWS::IAM::Policy',
+      }),
+      'orgusersandgroupspolicyallowpasswordchanges7A9EFD98': dict({
+        'Properties': dict({
+          'Description': '',
+          'ManagedPolicyName': 'AllowPasswordChanges',
+          'Path': '/',
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'iam:GetAccountPasswordPolicy',
+                'Effect': 'Allow',
+                'Resource': '*',
+                'Sid': 'ViewAccountPasswordRequirements',
+              }),
+              dict({
+                'Action': list([
+                  'iam:GetUser',
+                  'iam:ChangePassword',
+                ]),
+                'Effect': 'Allow',
+                'Resource': 'arn:aws:iam::*:user/${aws:username}',
+                'Sid': 'ChangeOwnPassword',
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+        }),
+        'Type': 'AWS::IAM::ManagedPolicy',
+      }),
       'rawcrawlerrawscoofyjourneys': dict({
         'Properties': dict({
           'DatabaseName': 'data_lake_raw',
