@@ -8,7 +8,7 @@
       }),
     }),
     'Resources': dict({
-      'AwsCliLayerF44AAF94': dict({
+      'copyscoofyexampledataAwsCliLayer0B12F367': dict({
         'Properties': dict({
           'Content': dict({
             'S3Bucket': dict({
@@ -20,22 +20,23 @@
         }),
         'Type': 'AWS::Lambda::LayerVersion',
       }),
-      'copyscoofyexampledata0B8BA06E': dict({
+      'copyscoofyexampledatacopydatalambda6DC3D084': dict({
         'DependsOn': list([
-          'copyscoofyexampledataServiceRoleDefaultPolicy0DB6506A',
-          'copyscoofyexampledataServiceRole6090E616',
+          'copyscoofyexampledatacopydatalambdaServiceRoleDefaultPolicy61CBCF63',
+          'copyscoofyexampledatacopydatalambdaServiceRoleA6128E3E',
+          'xwbatchbucketraw82D91BD7',
         ]),
         'Properties': dict({
           'Code': dict({
             'S3Bucket': dict({
               'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
             }),
-            'S3Key': '5474f9695da9a766071ad17aebf7111cffc0b5cdf3c398acbdde6a8875438cb4.zip',
+            'S3Key': '82fd8dade45f9a7568b81eb1425bfa6dfdf20ff750210274d12e3b5367426f6b.zip',
           }),
           'Environment': dict({
             'Variables': dict({
-              'INPUT_BUCKET_URI': 's3://xw-d13g-scoofy-data-inputs/data/journeys',
-              'OUTPUT_BUCKET_URI': dict({
+              'SOURCE_BUCKET_URI': 's3://xw-d13g-scoofy-data-inputs/data/journeys',
+              'TARGET_BUCKET_URI': dict({
                 'Fn::Join': list([
                   '',
                   list([
@@ -49,15 +50,15 @@
               }),
             }),
           }),
-          'Handler': 'copyjob_for_example_data.sync_bucket_uri',
+          'Handler': 'copyjob_for_s3_data.sync_bucket_uri',
           'Layers': list([
             dict({
-              'Ref': 'AwsCliLayerF44AAF94',
+              'Ref': 'copyscoofyexampledataAwsCliLayer0B12F367',
             }),
           ]),
           'Role': dict({
             'Fn::GetAtt': list([
-              'copyscoofyexampledataServiceRole6090E616',
+              'copyscoofyexampledatacopydatalambdaServiceRoleA6128E3E',
               'Arn',
             ]),
           }),
@@ -66,7 +67,10 @@
         }),
         'Type': 'AWS::Lambda::Function',
       }),
-      'copyscoofyexampledataServiceRole6090E616': dict({
+      'copyscoofyexampledatacopydatalambdaServiceRoleA6128E3E': dict({
+        'DependsOn': list([
+          'xwbatchbucketraw82D91BD7',
+        ]),
         'Properties': dict({
           'AssumeRolePolicyDocument': dict({
             'Statement': list([
@@ -97,7 +101,10 @@
         }),
         'Type': 'AWS::IAM::Role',
       }),
-      'copyscoofyexampledataServiceRoleDefaultPolicy0DB6506A': dict({
+      'copyscoofyexampledatacopydatalambdaServiceRoleDefaultPolicy61CBCF63': dict({
+        'DependsOn': list([
+          'xwbatchbucketraw82D91BD7',
+        ]),
         'Properties': dict({
           'PolicyDocument': dict({
             'Statement': list([
@@ -152,14 +159,51 @@
             ]),
             'Version': '2012-10-17',
           }),
-          'PolicyName': 'copyscoofyexampledataServiceRoleDefaultPolicy0DB6506A',
+          'PolicyName': 'copyscoofyexampledatacopydatalambdaServiceRoleDefaultPolicy61CBCF63',
           'Roles': list([
             dict({
-              'Ref': 'copyscoofyexampledataServiceRole6090E616',
+              'Ref': 'copyscoofyexampledatacopydatalambdaServiceRoleA6128E3E',
             }),
           ]),
         }),
         'Type': 'AWS::IAM::Policy',
+      }),
+      'copyscoofyexampledatasynchronrule11928A70': dict({
+        'Properties': dict({
+          'ScheduleExpression': 'cron(10 * ? * * *)',
+          'State': 'ENABLED',
+          'Targets': list([
+            dict({
+              'Arn': dict({
+                'Fn::GetAtt': list([
+                  'copyscoofyexampledatacopydatalambda6DC3D084',
+                  'Arn',
+                ]),
+              }),
+              'Id': 'Target0',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::Events::Rule',
+      }),
+      'copyscoofyexampledatasynchronruleAllowEventRulexwbatchcopyscoofyexampledatacopydatalambda66B488F7F742C9D4': dict({
+        'Properties': dict({
+          'Action': 'lambda:InvokeFunction',
+          'FunctionName': dict({
+            'Fn::GetAtt': list([
+              'copyscoofyexampledatacopydatalambda6DC3D084',
+              'Arn',
+            ]),
+          }),
+          'Principal': 'events.amazonaws.com',
+          'SourceArn': dict({
+            'Fn::GetAtt': list([
+              'copyscoofyexampledatasynchronrule11928A70',
+              'Arn',
+            ]),
+          }),
+        }),
+        'Type': 'AWS::Lambda::Permission',
       }),
       'orgusersandgroupsdatalakedebugging3664E396': dict({
         'Properties': dict({
@@ -369,43 +413,6 @@
           ]),
         }),
         'Type': 'AWS::IAM::Policy',
-      }),
-      'synchronrule56B26464': dict({
-        'Properties': dict({
-          'ScheduleExpression': 'cron(10 * ? * * *)',
-          'State': 'ENABLED',
-          'Targets': list([
-            dict({
-              'Arn': dict({
-                'Fn::GetAtt': list([
-                  'copyscoofyexampledata0B8BA06E',
-                  'Arn',
-                ]),
-              }),
-              'Id': 'Target0',
-            }),
-          ]),
-        }),
-        'Type': 'AWS::Events::Rule',
-      }),
-      'synchronruleAllowEventRulexwbatchcopyscoofyexampledata53445A4F470A9808': dict({
-        'Properties': dict({
-          'Action': 'lambda:InvokeFunction',
-          'FunctionName': dict({
-            'Fn::GetAtt': list([
-              'copyscoofyexampledata0B8BA06E',
-              'Arn',
-            ]),
-          }),
-          'Principal': 'events.amazonaws.com',
-          'SourceArn': dict({
-            'Fn::GetAtt': list([
-              'synchronrule56B26464',
-              'Arn',
-            ]),
-          }),
-        }),
-        'Type': 'AWS::Lambda::Permission',
       }),
       'triggerrawcrawlerrawscoofyjourneys': dict({
         'Properties': dict({

@@ -2,7 +2,7 @@ import aws_cdk
 from aws_cdk import aws_glue, aws_iam, aws_s3
 from constructs import Construct
 
-from .copy_example_data import add_copy_scoofy_example_data
+from .copy_s3_data import CopyS3Data
 from .users_and_groups import (
     GROUP_DATA_LAKE_DEBUGGING,
     OrgUsersAndGroups,
@@ -42,7 +42,14 @@ class XwBatchStack(aws_cdk.Stack):
         )
 
         # Add stuff for some example data
-        example_data_location = add_copy_scoofy_example_data(self, self.s3_raw_bucket)
+        self.scoofy_example_data = CopyS3Data(
+            self,
+            id="copy-scoofy-example-data",
+            source_bucket_name="xw-d13g-scoofy-data-inputs",
+            source_bucket_path="/data/journeys",
+            target_bucket=self.s3_raw_bucket,
+            target_bucket_path="/raw/scoofy/journeys/",
+        )
 
         self.users_and_groups: OrgUsersAndGroups = create_org_groups(self)
 
@@ -51,7 +58,7 @@ class XwBatchStack(aws_cdk.Stack):
         # 2. glue job (with manual script) to convert to parquet + add it as a table into another glue database, but
         #    still the same s3 bucket: <bucket>/converted/table
 
-        raw_data_tables = [example_data_location]
+        raw_data_table_paths = [self.scoofy_example_data.target_bucket_path]
         # only [a-z0-9_]{1,255}, everything else beaks athena later on
         # https://docs.aws.amazon.com/athena/latest/ug/glue-best-practices.html#schema-crawlers-schedule
         raw_data_base_name = "data_lake_raw"
@@ -72,7 +79,7 @@ class XwBatchStack(aws_cdk.Stack):
             self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING)
         )
 
-        for table_path in raw_data_tables:
+        for table_path in raw_data_table_paths:
             table_id = table_path.replace("/", "-")
             # glue crawlers for the raw data
             crawler_name = f"rawcrawler-{table_id}"

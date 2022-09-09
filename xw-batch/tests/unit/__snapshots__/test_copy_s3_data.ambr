@@ -1,0 +1,245 @@
+# name: test_copy_s3_data_snapshot
+  dict({
+    'Parameters': dict({
+      'BootstrapVersion': dict({
+        'Default': '/cdk-bootstrap/hnb659fds/version',
+        'Description': 'Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]',
+        'Type': 'AWS::SSM::Parameter::Value<String>',
+      }),
+    }),
+    'Resources': dict({
+      's3copyjobAwsCliLayer4D5BE900': dict({
+        'Properties': dict({
+          'Content': dict({
+            'S3Bucket': dict({
+              'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+            }),
+            'S3Key': '731f24951dbe4e08bfc519dd7c23a4f7158528bd5557e38437b08292ab2a873c.zip',
+          }),
+          'Description': '/opt/awscli/aws',
+        }),
+        'Type': 'AWS::Lambda::LayerVersion',
+      }),
+      's3copyjobcopydatalambda2C58C00D': dict({
+        'DependsOn': list([
+          's3copyjobcopydatalambdaServiceRoleDefaultPolicy9DFA9459',
+          's3copyjobcopydatalambdaServiceRole08F9B7F7',
+          'testbucketE6E05ABE',
+        ]),
+        'Properties': dict({
+          'Code': dict({
+            'S3Bucket': dict({
+              'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
+            }),
+            'S3Key': '82fd8dade45f9a7568b81eb1425bfa6dfdf20ff750210274d12e3b5367426f6b.zip',
+          }),
+          'Environment': dict({
+            'Variables': dict({
+              'SOURCE_BUCKET_URI': 's3://source-bucket/source-path',
+              'TARGET_BUCKET_URI': dict({
+                'Fn::Join': list([
+                  '',
+                  list([
+                    's3://',
+                    dict({
+                      'Ref': 'testbucketE6E05ABE',
+                    }),
+                    '/target-path',
+                  ]),
+                ]),
+              }),
+            }),
+          }),
+          'Handler': 'copyjob_for_s3_data.sync_bucket_uri',
+          'Layers': list([
+            dict({
+              'Ref': 's3copyjobAwsCliLayer4D5BE900',
+            }),
+          ]),
+          'Role': dict({
+            'Fn::GetAtt': list([
+              's3copyjobcopydatalambdaServiceRole08F9B7F7',
+              'Arn',
+            ]),
+          }),
+          'Runtime': 'python3.9',
+          'Timeout': 900,
+        }),
+        'Type': 'AWS::Lambda::Function',
+      }),
+      's3copyjobcopydatalambdaServiceRole08F9B7F7': dict({
+        'DependsOn': list([
+          'testbucketE6E05ABE',
+        ]),
+        'Properties': dict({
+          'AssumeRolePolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': 'sts:AssumeRole',
+                'Effect': 'Allow',
+                'Principal': dict({
+                  'Service': 'lambda.amazonaws.com',
+                }),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'ManagedPolicyArns': list([
+            dict({
+              'Fn::Join': list([
+                '',
+                list([
+                  'arn:',
+                  dict({
+                    'Ref': 'AWS::Partition',
+                  }),
+                  ':iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+                ]),
+              ]),
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Role',
+      }),
+      's3copyjobcopydatalambdaServiceRoleDefaultPolicy9DFA9459': dict({
+        'DependsOn': list([
+          'testbucketE6E05ABE',
+        ]),
+        'Properties': dict({
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  's3:GetObject*',
+                  's3:GetBucket*',
+                  's3:List*',
+                  's3:DeleteObject*',
+                  's3:PutObject',
+                  's3:PutObjectLegalHold',
+                  's3:PutObjectRetention',
+                  's3:PutObjectTagging',
+                  's3:PutObjectVersionTagging',
+                  's3:Abort*',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::GetAtt': list([
+                      'testbucketE6E05ABE',
+                      'Arn',
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'testbucketE6E05ABE',
+                            'Arn',
+                          ]),
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+              dict({
+                'Action': list([
+                  's3:GetObject',
+                  's3:ListBucket',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  'arn:aws:s3:::source-bucket/*',
+                  'arn:aws:s3:::source-bucket',
+                ]),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+          'PolicyName': 's3copyjobcopydatalambdaServiceRoleDefaultPolicy9DFA9459',
+          'Roles': list([
+            dict({
+              'Ref': 's3copyjobcopydatalambdaServiceRole08F9B7F7',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Policy',
+      }),
+      's3copyjobsynchronruleAllowEventRules3copyjobcopydatalambda4DD6F0C3CA0FFE3E': dict({
+        'Properties': dict({
+          'Action': 'lambda:InvokeFunction',
+          'FunctionName': dict({
+            'Fn::GetAtt': list([
+              's3copyjobcopydatalambda2C58C00D',
+              'Arn',
+            ]),
+          }),
+          'Principal': 'events.amazonaws.com',
+          'SourceArn': dict({
+            'Fn::GetAtt': list([
+              's3copyjobsynchronruleC95F4B65',
+              'Arn',
+            ]),
+          }),
+        }),
+        'Type': 'AWS::Lambda::Permission',
+      }),
+      's3copyjobsynchronruleC95F4B65': dict({
+        'Properties': dict({
+          'ScheduleExpression': 'cron(10 * ? * * *)',
+          'State': 'ENABLED',
+          'Targets': list([
+            dict({
+              'Arn': dict({
+                'Fn::GetAtt': list([
+                  's3copyjobcopydatalambda2C58C00D',
+                  'Arn',
+                ]),
+              }),
+              'Id': 'Target0',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::Events::Rule',
+      }),
+      'testbucketE6E05ABE': dict({
+        'DeletionPolicy': 'Retain',
+        'Properties': dict({
+          'BucketName': 'target-test',
+        }),
+        'Type': 'AWS::S3::Bucket',
+        'UpdateReplacePolicy': 'Retain',
+      }),
+    }),
+    'Rules': dict({
+      'CheckBootstrapVersion': dict({
+        'Assertions': list([
+          dict({
+            'Assert': dict({
+              'Fn::Not': list([
+                dict({
+                  'Fn::Contains': list([
+                    list([
+                      '1',
+                      '2',
+                      '3',
+                      '4',
+                      '5',
+                    ]),
+                    dict({
+                      'Ref': 'BootstrapVersion',
+                    }),
+                  ]),
+                }),
+              ]),
+            }),
+            'AssertDescription': "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+          }),
+        ]),
+      }),
+    }),
+  })
+# ---

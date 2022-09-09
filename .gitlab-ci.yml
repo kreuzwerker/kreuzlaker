@@ -62,7 +62,7 @@ mypy:
   needs: [ 'install-packages' ]
   script:
     - echo "Running mypy..."
-    - python3 -m mypy xw_batch tests lambda
+    - python3 -m mypy xw_batch tests lambdas
     - echo "No mypy issues found."
 
 black:
@@ -72,7 +72,7 @@ black:
   needs: [ 'install-packages' ]
   script:
     - echo "Running black..."
-    - python3 -m black --check --verbose -- xw_batch tests lambda
+    - python3 -m black --check --verbose -- xw_batch tests lambdas
     - echo "No black issues found."
 
 isort:
@@ -82,7 +82,7 @@ isort:
   needs: [ 'install-packages' ]
   script:
     - echo "Running isort..."
-    - python3 -m isort --check-only xw_batch tests lambda
+    - python3 -m isort --check-only xw_batch tests lambdas
     - echo "No isort issues found."
 
 flake8:
@@ -92,7 +92,7 @@ flake8:
   needs: [ 'install-packages' ]
   script:
     - echo "Running flake8..."
-    - python3 -m flake8 xw_batch tests lambda
+    - python3 -m flake8 xw_batch tests lambdas
     - echo "No flake8 issues found."
 
 pytest:
