@@ -40,3 +40,6 @@ See also the [Glue best practises](https://docs.aws.amazon.com/athena/latest/ug/
   coded (secrets come from secret manager, so no harm!). On python, every config item should then be passed to the stack
   and from there to any construct which needs it.
 - Nothing apart from `app.py` should use env variables.
+- Assets need to explicitly exclude generated files and folders, like `__pycache__/`. Not excluding such generated files
+  and folders might result in asset hash changes after running tests. This in turn triggers snapshot test failures
+  during CI/CD and might even result in unneeded deployments!
