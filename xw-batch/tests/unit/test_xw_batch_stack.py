@@ -1,6 +1,8 @@
+import json
+
 import aws_cdk
 import pytest
-from aws_cdk.assertions import Match, Template
+from aws_cdk.assertions import Capture, Match, Template
 
 from xw_batch.users_and_groups import GROUP_DATA_LAKE_DEBUGGING
 
@@ -69,6 +71,93 @@ def test_raw_data_s3_bucket_created(template: Template):
             "UpdateReplacePolicy": "Retain",
         },
     )
+
+
+def test_glue_database_converted(template: Template):
+    # This checks the default removal policy if not explicitly set
+    template.has_resource_properties(
+        "AWS::Glue::Database",
+        {
+            "CatalogId": {"Ref": "AWS::AccountId"},
+            "DatabaseInput": {"Name": "data_lake_converted"},
+        },
+    )
+
+
+def test_glue_raw_crawler_scoofy_example_data(template: Template):
+    # This checks the default removal policy if not explicitly set
+    targets = Capture()
+    template.has_resource_properties(
+        "AWS::Glue::Crawler",
+        {
+            "Targets": targets,
+            "DatabaseName": "data_lake_raw",
+        },
+    )
+    assert "/raw/scoofy/journeys/" in json.dumps(targets.as_object())
+
+
+def test_glue_convert_job_for_scoofy_example_data(
+    template: Template,
+    stack: XwBatchStack,
+):
+    # This checks the default removal policy if not explicitly set
+    print(template.to_json())
+    resolved_raw_bucket_name = stack.resolve(stack.s3_raw_bucket.bucket_name)
+    resolved_convert_glue_role_arn = stack.resolve(stack.glue_converted_role.role_arn)
+    script_location = Capture()
+    extra_py_files = Capture()
+    template.has_resource_properties(
+        "AWS::Glue::Job",
+        {
+            "Command": {
+                "Name": "glueetl",
+                "PythonVersion": "3",
+                # The filename is getting mangled, not nice, but works with multiple versions...
+                "ScriptLocation": script_location,
+            },
+            "Role": resolved_convert_glue_role_arn,
+            "DefaultArguments": {
+                "--job-language": "python",
+                "--extra-py-files": extra_py_files,
+                "--job-bookmark-option": "job-bookmark-enable",
+                "--SOURCE_BUCKET_URI": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "s3://",
+                            resolved_raw_bucket_name,
+                            "/raw/scoofy/journeys/",
+                        ],
+                    ],
+                },
+                "--SOURCE_COMPRESSION_TYPE": "gzip",
+                "--SOURCE_FORMAT": "json",
+                "--SOURCE_PARTITION_VAR": "start_dt",
+                "--TARGET_BUCKET_URI": {
+                    "Fn::Join": [
+                        "",
+                        [
+                            "s3://",
+                            resolved_raw_bucket_name,
+                            "/converted/journeys",
+                        ],
+                    ]
+                },
+                "--TARGET_DB_NAME": "data_lake_converted",
+                "--TARGET_TABLE_NAME": "journeys",
+                "--TARGET_COMPRESSION_TYPE": "snappy",
+                "--TARGET_FORMAT": "glueparquet",
+            },
+            "Description": Match.string_like_regexp("_created_at"),
+            "GlueVersion": "3.0",
+            "MaxRetries": 1,
+            "NumberOfWorkers": 2,
+            "WorkerType": "G.1X",
+        },
+    )
+    assert ".py" in json.dumps(script_location.as_object())
+    assert ".zip" in json.dumps(extra_py_files.as_object())
 
 
 @pytest.mark.parametrize(

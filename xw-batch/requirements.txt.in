@@ -1,4 +1,9 @@
 aws-cdk-lib>=2.36,<3
 constructs>=10.0.0,<11.0.0
+
+# This are L2 constructs for aws glue which will eventually get integrated into cdk proper
+# They are developed in the normal cdk repo, so get released every week as well...
+aws-cdk.aws-glue-alpha
+
 # For snapshot testing: https://github.com/tophat/syrupy
 syrupy>=3.0.0,<4.0

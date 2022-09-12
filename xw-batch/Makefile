@@ -1,4 +1,4 @@
-PYTHON_SOURCE:=xw_batch tests lambdas app.py
+PYTHON_SOURCE:=xw_batch tests lambdas glue app.py
 
 # The default stack to deploy
 # Overwrite with make CDK_STACK_NAME=prod/XwBatchStack all
@@ -11,7 +11,7 @@ all: lint test synth deploy
 
 # This synth and deploys in one go!
 .PHONY: deploy
-deploy: node_modules/install-packages-stamp $(SYNTH_OUT_DIR)/  ## Run cdk deploy (with --hotswap) for the stack $(CDK_STACK_NAME)
+deploy: node_modules/install-packages-stamp  ## Run cdk deploy (with --hotswap) for the stack $(CDK_STACK_NAME)
 	node_modules/.bin/cdk deploy --hotswap $(CDK_STACK_NAME)
 
 # Only depend on node to make sure we use a already synthesised output dir to deploy

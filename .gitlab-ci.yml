@@ -1,7 +1,10 @@
 # we need an image with both nodejs and python on it, otherwise the tests won't work
 # Installing one or the other into the official nodejs/python images takes too much time
 # TODO: try to install one or the other locally and cache it?
-image: nikolaik/python-nodejs:python3.10-nodejs18-bullseye
+#image: nikolaik/python-nodejs:python3.10-nodejs18-bullseye
+# use a py3.9 image to work around a mypy bug: https://github.com/python/mypy/issues/13627#issuecomment-1240559724
+# which should be fixed in mypy 0.980 or 0.990
+image: nikolaik/python-nodejs:python3.9-nodejs18-bullseye
 
 # Our shared runner is tagged with "docker", so all jobs need that as a tag to run on that runner
 
@@ -22,7 +25,7 @@ cache:
         - xw-batch/requirements-dev.txt
     paths:
       - .cache/pip
-      - xw-batch/venv/
+      - xw-batch/.venv/
   - key:
       files:
         - xw-batch/package-lock.json
@@ -34,8 +37,8 @@ cache:
 before_script:
   - cd xw-batch # every later job assumes we are in this directory!
   - python3 --version  # For debugging
-  - python3 -m venv venv
-  - source venv/bin/activate
+  - python3 -m venv .venv
+  - source .venv/bin/activate
   - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
   - export PATH=$PATH:./node_modules/.bin # to make the cdk command available
   - node --version && npm root && command -v cdk   # For debugging
@@ -62,7 +65,7 @@ mypy:
   needs: [ 'install-packages' ]
   script:
     - echo "Running mypy..."
-    - python3 -m mypy xw_batch tests lambdas
+    - python3 -m mypy xw_batch tests lambdas glue
     - echo "No mypy issues found."
 
 black:
@@ -72,7 +75,7 @@ black:
   needs: [ 'install-packages' ]
   script:
     - echo "Running black..."
-    - python3 -m black --check --verbose -- xw_batch tests lambdas
+    - python3 -m black --check --verbose -- xw_batch tests lambdas glue
     - echo "No black issues found."
 
 isort:
@@ -82,7 +85,7 @@ isort:
   needs: [ 'install-packages' ]
   script:
     - echo "Running isort..."
-    - python3 -m isort --check-only xw_batch tests lambdas
+    - python3 -m isort --check-only xw_batch tests lambdas glue
     - echo "No isort issues found."
 
 flake8:
@@ -92,7 +95,7 @@ flake8:
   needs: [ 'install-packages' ]
   script:
     - echo "Running flake8..."
-    - python3 -m flake8 xw_batch tests lambdas
+    - python3 -m flake8 xw_batch tests lambdas glue
     - echo "No flake8 issues found."
 
 pytest:
