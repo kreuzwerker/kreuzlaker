@@ -1,10 +1,7 @@
 # we need an image with both nodejs and python on it, otherwise the tests won't work
 # Installing one or the other into the official nodejs/python images takes too much time
 # TODO: try to install one or the other locally and cache it?
-#image: nikolaik/python-nodejs:python3.10-nodejs18-bullseye
-# use a py3.9 image to work around a mypy bug: https://github.com/python/mypy/issues/13627#issuecomment-1240559724
-# which should be fixed in mypy 0.980 or 0.990
-image: nikolaik/python-nodejs:python3.9-nodejs18-bullseye
+image: nikolaik/python-nodejs:python3.10-nodejs18-bullseye
 
 # Our shared runner is tagged with "docker", so all jobs need that as a tag to run on that runner
 
