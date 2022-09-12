@@ -44,7 +44,13 @@ class CopyS3Data(Construct):
             self,
             id="copy-data-lambda",
             runtime=aws_lambda.Runtime.PYTHON_3_9,  # type: ignore
-            code=aws_lambda.Code.from_asset("lambdas/copyjob_for_s3_data"),
+            code=aws_lambda.Code.from_asset(
+                "lambdas/copyjob_for_s3_data",
+                exclude=[
+                    # Excluded to make repeatable builds in case these files get compiled by tests
+                    "__pycache__",
+                ],
+            ),
             handler="copyjob_for_s3_data.sync_bucket_uri",
             environment={
                 "SOURCE_BUCKET_URI": f"s3://{self.source_bucket_name}{self.source_bucket_path}",

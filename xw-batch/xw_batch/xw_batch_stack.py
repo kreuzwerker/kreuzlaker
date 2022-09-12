@@ -147,6 +147,8 @@ class XwBatchStack(aws_cdk.Stack):
                 "__init__.py",
                 "scripts",
                 "!business_logic/**",
+                # Excluded to make repeatable builds in case these files get compiled by tests
+                "__pycache__",
             ],
         )
         glue_additional_python_files = glue.Code.from_bucket(
