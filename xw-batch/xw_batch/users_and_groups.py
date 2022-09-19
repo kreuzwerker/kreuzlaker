@@ -83,6 +83,7 @@ class OrgUsersAndGroups(Construct):
             "policy-allow-password-changes",
             document=POLICY_DOCUMENT_ALLOW_PASSWORD_CHANGES,
             managed_policy_name="AllowPasswordChanges",
+            description="Allow password changed for users."
         )
 
         # Users

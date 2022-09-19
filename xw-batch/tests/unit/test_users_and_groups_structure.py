@@ -2,19 +2,15 @@ import aws_cdk
 import pytest
 from aws_cdk.assertions import Match, Template
 
-from xw_batch.users_and_groups import (
-    GROUP_DATA_LAKE_DEBUGGING,
-    OrgUsersAndGroups,
-    add_users_on_dev,
-)
+from xw_batch.users_and_groups import OrgUsersAndGroups
 
 
 class _UaGStack(aws_cdk.Stack):
     def __init__(self):
         super().__init__()
         self.ouag = OrgUsersAndGroups(self, "OrgUsersAndGroups")
-        self.ouag.add_org_group(GROUP_DATA_LAKE_DEBUGGING)
-        add_users_on_dev(self.ouag)
+        self.ouag.add_org_group("ExampleGroup")
+        self.ouag.add_org_user("example.user", groups=["ExampleGroup"])
 
 
 @pytest.fixture(name="ouag_stack", scope="module")
@@ -36,7 +32,7 @@ def test_org_users_and_groups_structure(
     ouag_template.has_resource_properties(
         "AWS::IAM::Group",
         {
-            "GroupName": GROUP_DATA_LAKE_DEBUGGING,
+            "GroupName": "ExampleGroup",
         },
     )
     resolved_wanted_policy_arn = ouag_stack.resolve(

@@ -8,9 +8,9 @@
       }),
     }),
     'Resources': dict({
-      'OrgUsersAndGroupsdatalakedebuggingE8ABA7E1': dict({
+      'OrgUsersAndGroupsexamplegroup83FCA7D2': dict({
         'Properties': dict({
-          'GroupName': 'DataLakeDebugging',
+          'GroupName': 'ExampleGroup',
         }),
         'Type': 'AWS::IAM::Group',
       }),
@@ -18,7 +18,7 @@
         'Properties': dict({
           'Groups': list([
             dict({
-              'Ref': 'OrgUsersAndGroupsdatalakedebuggingE8ABA7E1',
+              'Ref': 'OrgUsersAndGroupsexamplegroup83FCA7D2',
             }),
           ]),
           'LoginProfile': dict({
@@ -36,7 +36,7 @@
       }),
       'OrgUsersAndGroupspolicyallowpasswordchanges91D72591': dict({
         'Properties': dict({
-          'Description': '',
+          'Description': 'Allow password changed for users.',
           'ManagedPolicyName': 'AllowPasswordChanges',
           'Path': '/',
           'PolicyDocument': dict({

@@ -365,7 +365,7 @@
       }),
       'orgusersandgroupspolicyallowpasswordchanges7A9EFD98': dict({
         'Properties': dict({
-          'Description': '',
+          'Description': 'Allow password changed for users.',
           'ManagedPolicyName': 'AllowPasswordChanges',
           'Path': '/',
           'PolicyDocument': dict({
