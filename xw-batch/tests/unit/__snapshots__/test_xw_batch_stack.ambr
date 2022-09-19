@@ -8,6 +8,334 @@
       }),
     }),
     'Resources': dict({
+      'allowusersathenaaccessmanagedpolicy1FE7324E': dict({
+        'Properties': dict({
+          'Description': 'Allow athena access to users.',
+          'ManagedPolicyName': 'AllowAthenaAccessToUsers',
+          'Path': '/',
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  'athena:ListEngineVersions',
+                  'athena:ListWorkGroups',
+                  'athena:ListDataCatalogs',
+                  'athena:ListDatabases',
+                  'athena:GetDatabase',
+                  'athena:ListTableMetadata',
+                  'athena:GetTableMetadata',
+                ]),
+                'Effect': 'Allow',
+                'Resource': '*',
+              }),
+              dict({
+                'Action': list([
+                  'athena:GetWorkGroup',
+                  'athena:BatchGetQueryExecution',
+                  'athena:GetQueryExecution',
+                  'athena:ListQueryExecutions',
+                  'athena:StartQueryExecution',
+                  'athena:StopQueryExecution',
+                  'athena:GetQueryResults',
+                  'athena:GetQueryResultsStream',
+                  'athena:CreateNamedQuery',
+                  'athena:GetNamedQuery',
+                  'athena:BatchGetNamedQuery',
+                  'athena:ListNamedQueries',
+                  'athena:DeleteNamedQuery',
+                  'athena:CreatePreparedStatement',
+                  'athena:GetPreparedStatement',
+                  'athena:ListPreparedStatements',
+                  'athena:UpdatePreparedStatement',
+                  'athena:DeletePreparedStatement',
+                ]),
+                'Effect': 'Allow',
+                'Resource': dict({
+                  'Fn::Join': list([
+                    '',
+                    list([
+                      'arn:aws:athena:',
+                      dict({
+                        'Ref': 'AWS::Region',
+                      }),
+                      ':',
+                      dict({
+                        'Ref': 'AWS::AccountId',
+                      }),
+                      ':workgroup/all_users',
+                    ]),
+                  ]),
+                }),
+              }),
+              dict({
+                'Action': list([
+                  'glue:BatchGetPartition',
+                  'glue:GetDatabase',
+                  'glue:GetDatabases',
+                  'glue:GetPartition',
+                  'glue:GetPartitions',
+                  'glue:GetTable',
+                  'glue:GetTables',
+                  'glue:GetTableVersion',
+                  'glue:GetTableVersions',
+                  'glue:BatchCreatePartition',
+                  'glue:UpdateDatabase',
+                  'glue:DeleteDatabase',
+                  'glue:CreateTable',
+                  'glue:CreateDatabase',
+                  'glue:UpdateTable',
+                  'glue:BatchDeletePartition',
+                  'glue:BatchDeleteTable',
+                  'glue:DeleteTable',
+                  'glue:CreatePartition',
+                  'glue:DeletePartition',
+                  'glue:UpdatePartition',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:aws:glue:',
+                        dict({
+                          'Ref': 'AWS::Region',
+                        }),
+                        ':',
+                        dict({
+                          'Ref': 'AWS::AccountId',
+                        }),
+                        ':catalog',
+                      ]),
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:aws:glue:',
+                        dict({
+                          'Ref': 'AWS::Region',
+                        }),
+                        ':',
+                        dict({
+                          'Ref': 'AWS::AccountId',
+                        }),
+                        ':database/user_${aws:username}',
+                      ]),
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:aws:glue:',
+                        dict({
+                          'Ref': 'AWS::Region',
+                        }),
+                        ':',
+                        dict({
+                          'Ref': 'AWS::AccountId',
+                        }),
+                        ':table/user_${aws:username}/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+              dict({
+                'Action': list([
+                  's3:PutObject',
+                  's3:GetObject',
+                  's3:AbortMultipartUpload',
+                  's3:GetBucketLocation',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::GetAtt': list([
+                      'xwbatchbucketathenaqueryresults08D76E1C',
+                      'Arn',
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'xwbatchbucketathenaqueryresults08D76E1C',
+                            'Arn',
+                          ]),
+                        }),
+                        '/users/user_${aws:username}/*',
+                      ]),
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'xwbatchbucketathenaqueryresults08D76E1C',
+                            'Arn',
+                          ]),
+                        }),
+                        '/users/shared/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+              dict({
+                'Action': 's3:ListBucket',
+                'Condition': dict({
+                  'StringLike': dict({
+                    's3:prefix': list([
+                      '/users/user_${aws:username}/*',
+                      '/users/shared/',
+                    ]),
+                  }),
+                }),
+                'Effect': 'Allow',
+                'Resource': dict({
+                  'Fn::GetAtt': list([
+                    'xwbatchbucketathenaqueryresults08D76E1C',
+                    'Arn',
+                  ]),
+                }),
+              }),
+              dict({
+                'Action': list([
+                  'glue:BatchGetPartition',
+                  'glue:GetDatabase',
+                  'glue:GetDatabases',
+                  'glue:GetPartition',
+                  'glue:GetPartitions',
+                  'glue:GetTable',
+                  'glue:GetTables',
+                  'glue:GetTableVersion',
+                  'glue:GetTableVersions',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:aws:glue:',
+                        dict({
+                          'Ref': 'AWS::Region',
+                        }),
+                        ':',
+                        dict({
+                          'Ref': 'AWS::AccountId',
+                        }),
+                        ':catalog',
+                      ]),
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:aws:glue:',
+                        dict({
+                          'Ref': 'AWS::Region',
+                        }),
+                        ':',
+                        dict({
+                          'Ref': 'AWS::AccountId',
+                        }),
+                        ':database/',
+                        dict({
+                          'Ref': 'datalakeconvertedF1701755',
+                        }),
+                      ]),
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        'arn:aws:glue:',
+                        dict({
+                          'Ref': 'AWS::Region',
+                        }),
+                        ':',
+                        dict({
+                          'Ref': 'AWS::AccountId',
+                        }),
+                        ':table/',
+                        dict({
+                          'Ref': 'datalakeconvertedF1701755',
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+              dict({
+                'Action': list([
+                  's3:GetObject',
+                  's3:ListBucket',
+                  's3:GetBucketLocation',
+                ]),
+                'Effect': 'Allow',
+                'Resource': list([
+                  dict({
+                    'Fn::GetAtt': list([
+                      'xwbatchbucketraw82D91BD7',
+                      'Arn',
+                    ]),
+                  }),
+                  dict({
+                    'Fn::Join': list([
+                      '',
+                      list([
+                        dict({
+                          'Fn::GetAtt': list([
+                            'xwbatchbucketraw82D91BD7',
+                            'Arn',
+                          ]),
+                        }),
+                        '/*',
+                      ]),
+                    ]),
+                  }),
+                ]),
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+        }),
+        'Type': 'AWS::IAM::ManagedPolicy',
+      }),
+      'athenauserworkgroup': dict({
+        'Properties': dict({
+          'Description': 'Workgroup for all users',
+          'Name': 'all_users',
+          'WorkGroupConfiguration': dict({
+            'ResultConfiguration': dict({
+              'OutputLocation': dict({
+                'Fn::Join': list([
+                  '',
+                  list([
+                    's3://',
+                    dict({
+                      'Ref': 'xwbatchbucketathenaqueryresults08D76E1C',
+                    }),
+                    '/users/shared/',
+                  ]),
+                ]),
+              }),
+            }),
+          }),
+        }),
+        'Type': 'AWS::Athena::WorkGroup',
+      }),
       'converttoparquetjourneys2F8DA4E1': dict({
         'Properties': dict({
           'Command': dict({
@@ -296,6 +624,17 @@
           }),
         }),
         'Type': 'AWS::Glue::Database',
+      }),
+      'orgusersandgroupsdatalakeathenauser25425960': dict({
+        'Properties': dict({
+          'GroupName': 'DataLakeAthenaUser',
+          'ManagedPolicyArns': list([
+            dict({
+              'Ref': 'allowusersathenaaccessmanagedpolicy1FE7324E',
+            }),
+          ]),
+        }),
+        'Type': 'AWS::IAM::Group',
       }),
       'orgusersandgroupsdatalakedebugging3664E396': dict({
         'Properties': dict({
@@ -671,6 +1010,23 @@
           ]),
         }),
         'Type': 'AWS::IAM::Policy',
+      }),
+      'xwbatchbucketathenaqueryresults08D76E1C': dict({
+        'DeletionPolicy': 'Retain',
+        'Properties': dict({
+          'LifecycleConfiguration': dict({
+            'Rules': list([
+              dict({
+                'ExpirationInDays': 20,
+                'Id': 'remove_query_results_after_20_days',
+                'Prefix': 'users/',
+                'Status': 'Enabled',
+              }),
+            ]),
+          }),
+        }),
+        'Type': 'AWS::S3::Bucket',
+        'UpdateReplacePolicy': 'Retain',
       }),
       'xwbatchbucketraw82D91BD7': dict({
         'DeletionPolicy': 'Retain',

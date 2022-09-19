@@ -83,7 +83,7 @@ class OrgUsersAndGroups(Construct):
             "policy-allow-password-changes",
             document=POLICY_DOCUMENT_ALLOW_PASSWORD_CHANGES,
             managed_policy_name="AllowPasswordChanges",
-            description="Allow password changed for users."
+            description="Allow password changed for users.",
         )
 
         # Users
@@ -175,7 +175,10 @@ class OrgUsersAndGroups(Construct):
 
 
 # constants for groups to make the editor do the hard work...
+"""Debugging ability (like reading logs and all data)"""
 GROUP_DATA_LAKE_DEBUGGING = "DataLakeDebugging"
+"""Run athena queries against the data lake and publish these results in (personal) glue databases"""
+GROUP_DATA_LAKE_ATHENA_USER = "DataLakeAthenaUser"
 
 
 def create_org_groups(scope: Construct):
@@ -189,6 +192,7 @@ def create_org_groups(scope: Construct):
     # Groups
 
     uag.add_org_group(group_name=GROUP_DATA_LAKE_DEBUGGING)
+    uag.add_org_group(group_name=GROUP_DATA_LAKE_ATHENA_USER)
     return uag
 
 
@@ -198,7 +202,13 @@ def add_users_on_dev(org_groups: OrgUsersAndGroups) -> None:
 
     :param: org_groups: The already created construct for groups and users
     """
-    org_groups.add_org_user("example.user", groups=[GROUP_DATA_LAKE_DEBUGGING])
+    org_groups.add_org_user(
+        "example.user",
+        groups=[
+            GROUP_DATA_LAKE_DEBUGGING,
+            GROUP_DATA_LAKE_ATHENA_USER,
+        ],
+    )
 
 
 def add_users_on_prod(org_groups: OrgUsersAndGroups) -> None:
