@@ -44,6 +44,7 @@ stages: # List of stages for jobs, and their order of execution
   - install-packages
   - run-static-checks
   - run-tests
+  - deploy
 
 install-packages:
   stage: install-packages
@@ -53,6 +54,8 @@ install-packages:
     - echo "Installing packages"
     - python3 -m pip install -r requirements.txt
     - python3 -m pip install -r requirements-dev.txt
+    # For the credentials to AWS...
+    - python3 -m pip install awscli
     - echo "Installation of packages complete."
 
 mypy:
@@ -104,3 +107,36 @@ pytest:
     - echo "Running pytest..."
     - python3 -m pytest tests
     - echo "No pytest issues found."
+
+diff-gitlab-oidc-stack:
+  stage: deploy
+  only:
+    # Only run this when we push to the main branch = on merge...
+    # Given that the OIDC identity only has access from that branch, this prevents failures in merge request
+    # and accidental deploys :-)
+    - main@engineering/data-engineering/xw-data-toolkit
+  tags:
+    - docker
+  script:
+    - echo "Getting AWS credentials for the deployment"
+    # for debugging: If your runner runs in aws, this will already output something sensible!
+    - aws sts get-caller-identity || true
+    - >
+      export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+      $(aws sts assume-role-with-web-identity
+      --role-arn "arn:aws:iam::677474147593:role/gitlab-oidc-xw-batch-deployment"
+      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+      --web-identity-token $CI_JOB_JWT_V2
+      --duration-seconds 3600
+      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+      --output text))
+    - echo "Testing aws access"
+    # This should now output something or something different from the first call!
+    - aws sts get-caller-identity
+    # The actual "deployment", which in our case is just a diff as we do not yet have a deployment AWS account
+    - echo "Running a pseudo deployment (just diff)"
+    - cd ../gitlab-aws-oidc
+    - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
+    - cdk synth
+    - cdk diff
+    - echo "Deployment complete"
