@@ -287,6 +287,12 @@ class XwBatchStack(aws_cdk.Stack):
             },
         )
 
+        aws_cdk.CfnOutput(
+            self,
+            "out-athena_user_workgroup",
+            value=self.athena_user_workgroup.name,
+        )
+
         # Athena access has three levels
         # 1. Access to athena and athena (specific) workgroups
         # 2. Read/write access to the glue database + tables

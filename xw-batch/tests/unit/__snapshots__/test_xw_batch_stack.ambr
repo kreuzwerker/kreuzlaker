@@ -1,6 +1,9 @@
 # name: test_whole_stack_snapshot
   dict({
     'Outputs': dict({
+      'outathenauserworkgroup': dict({
+        'Value': 'all_users',
+      }),
       'outxwbatchbucketathenaqueryresultsbucketname': dict({
         'Value': dict({
           'Ref': 'xwbatchbucketathenaqueryresults08D76E1C',
