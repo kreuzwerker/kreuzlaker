@@ -1,0 +1,60 @@
+
+version: 2
+
+models:
+  - name: agg_journey_per_customer
+    description: "Agregated journeys per customer"
+    columns:
+      - name: customer_id
+        description: "The id of the customer"
+        tests:
+          - not_null
+          - unique
+      - name: journeys
+        description: "Overall number of journeys made by this customer"
+        tests:
+          - not_null
+      - name: amount_cents
+        description: "Lifetime revenue made from this customer in cents"
+        tests:
+          - not_null
+
+sources:
+  - name: data_lake_converted
+    tables:
+      - name: journeys
+        description: >
+          One record per journey of a customer with one of our scooters. New data arrives every hour.
+        freshness: # loaded daily
+          warn_after: {count: 2, period: hour}
+          error_after: {count: 3, period: hour}
+        loaded_at_field: _created_at
+        columns:
+          - name: journey_id
+            description: ID of the journey
+            tests:
+              - not_null
+          - name: customer_id
+            description: ID of the customer
+            tests:
+              - not_null
+          - name: scooter_id
+            description: ID of the scooter
+            tests:
+              - not_null
+          - name: start_dt
+            description: Start of the journey in utc
+            tests:
+              - not_null
+          - name: end_dt
+            description: End of the journey in utc
+            tests:
+              - not_null
+          - name: amount_cents
+            description: Money the customer was asked for in euro cents
+            tests:
+              - not_null
+          - name: _created_at
+            description: Time when the data was converted to parquet
+            tests:
+              - not_null
