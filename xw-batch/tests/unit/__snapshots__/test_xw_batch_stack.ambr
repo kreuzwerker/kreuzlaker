@@ -130,7 +130,7 @@
                         dict({
                           'Ref': 'AWS::AccountId',
                         }),
-                        ':database/user_${aws:username}',
+                        ':database/user_*',
                       ]),
                     ]),
                   }),
@@ -146,7 +146,7 @@
                         dict({
                           'Ref': 'AWS::AccountId',
                         }),
-                        ':table/user_${aws:username}/*',
+                        ':table/user_*/*',
                       ]),
                     ]),
                   }),

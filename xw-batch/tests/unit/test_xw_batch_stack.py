@@ -376,8 +376,8 @@ def test_athena_user_managed_policy(template: Template, stack: XwBatchStack) -> 
     # this is in the same statement, but we want to catch both;
     # Could probably be split, but then the statement would have to be split...
     for resource_match in (
-        ":table/user_${aws:username}/*",
-        ":database/user_${aws:username}",
+        ":table/user_*/*",
+        ":database/user_*",
     ):
         stmt = _one(_filter_by_resource(statements, match=resource_match))
         # users are allowed to do a lot!

@@ -381,8 +381,15 @@ class XwBatchStack(aws_cdk.Stack):
                         ],
                         "Resource": [
                             f"arn:aws:glue:{region}:{account}:catalog",
-                            f"arn:aws:glue:{region}:{account}:database/user_${{aws:username}}",
-                            f"arn:aws:glue:{region}:{account}:table/user_${{aws:username}}/*",
+                            # We want users to be able to create multiple databases (schema in dbt)
+                            # to allow for proper organizing the transformation results...
+                            # But hiding the databases from each other by adding the ${{aws:username}} part
+                            # does not work: we can have usernames with dots in it which would break the naming
+                            # convention for the databases (and identifiers). Therefor we allow users to see other
+                            # users databases, but still not the underlying data, if they use the proper prefix
+                            # (see next block, where s3 access is specified).
+                            f"arn:aws:glue:{region}:{account}:database/user_*",
+                            f"arn:aws:glue:{region}:{account}:table/user_*/*",
                         ],
                     },
                 ),
@@ -398,7 +405,9 @@ class XwBatchStack(aws_cdk.Stack):
                         ],
                         "Resource": [
                             self.s3_query_result_bucket.bucket_arn,
+                            # user specific
                             f"{self.s3_query_result_bucket.bucket_arn}/users/user_${{aws:username}}/*",
+                            # shared, used per default in the workgroup
                             f"{self.s3_query_result_bucket.bucket_arn}/users/shared/*",
                         ],
                     }
