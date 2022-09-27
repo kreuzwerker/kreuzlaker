@@ -43,3 +43,7 @@ See also the [Glue best practises](https://docs.aws.amazon.com/athena/latest/ug/
 - Assets need to explicitly exclude generated files and folders, like `__pycache__/`. Not excluding such generated files
   and folders might result in asset hash changes after running tests. This in turn triggers snapshot test failures
   during CI/CD and might even result in unneeded deployments!
+- Do not use custom names, at least not for stuff which CloudFormation needs to replace (e.g. `ManagedPolicy`, but
+  probably others). The result is that the stack fails to deploy on other changes (e.g. changes to the description)
+  unless you change the name (you can change it back in the next deploy).
+  See also the [AWS docs](https://aws.amazon.com/premiumsupport/knowledge-center/cloudformation-custom-name/).

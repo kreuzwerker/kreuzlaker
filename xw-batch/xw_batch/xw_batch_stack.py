@@ -450,7 +450,8 @@ class XwBatchStack(aws_cdk.Stack):
             self,
             "allow_users_athena_access_managed_policy",
             document=self.allow_users_athena_access_policy_document,
-            managed_policy_name="AllowAthenaAccessToUsers",
+            # Do not set to not have problems when deploying any changes to the policy. See best practises for cdk
+            # managed_policy_name="AllowAthenaAccessToUsers",
             description="Allow athena access to users.",
         )
         self.users_and_groups.get_group(GROUP_DATA_LAKE_ATHENA_USER).add_managed_policy(

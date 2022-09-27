@@ -82,7 +82,8 @@ class OrgUsersAndGroups(Construct):
             self,
             "policy-allow-password-changes",
             document=POLICY_DOCUMENT_ALLOW_PASSWORD_CHANGES,
-            managed_policy_name="AllowPasswordChanges",
+            # Do not set to not have problems when deploying any changes to the policy. See best practises for cdk
+            # managed_policy_name="AllowPasswordChanges",
             description="Allow password changed for users.",
         )
 
