@@ -282,6 +282,9 @@ class XwBatchStack(aws_cdk.Stack):
                 # Otherwise one cannot overwrite the output location
                 "enforceWorkGroupConfiguration": False,
                 "resultConfiguration": {
+                    "encryptionConfiguration": {
+                        "encryptionOption": "SSE_S3",
+                    },
                     # I haven't found a way to use per user locations: it's either one workgroup
                     # per user or a shared location...
                     "outputLocation": f"s3://{self.s3_query_result_bucket.bucket_name}/users/shared/",

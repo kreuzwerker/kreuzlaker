@@ -329,6 +329,9 @@
           'WorkGroupConfiguration': dict({
             'EnforceWorkGroupConfiguration': False,
             'ResultConfiguration': dict({
+              'EncryptionConfiguration': dict({
+                'EncryptionOption': 'SSE_S3',
+              }),
               'OutputLocation': dict({
                 'Fn::Join': list([
                   '',
