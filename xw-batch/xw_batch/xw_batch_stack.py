@@ -252,6 +252,12 @@ class XwBatchStack(aws_cdk.Stack):
             auto_delete_objects=stack_auto_delete_objects_in_s3,
         )
 
+        aws_cdk.CfnOutput(
+            self,
+            "out-xw_batch_bucket_athena_query_results_bucket_name",
+            value=self.s3_query_result_bucket.bucket_name,
+        )
+
         # Individual Users
 
         # For users, we throw everything away after 20 days to save space

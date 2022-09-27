@@ -1,5 +1,12 @@
 # name: test_whole_stack_snapshot
   dict({
+    'Outputs': dict({
+      'outxwbatchbucketathenaqueryresultsbucketname': dict({
+        'Value': dict({
+          'Ref': 'xwbatchbucketathenaqueryresults08D76E1C',
+        }),
+      }),
+    }),
     'Parameters': dict({
       'BootstrapVersion': dict({
         'Default': '/cdk-bootstrap/hnb659fds/version',
