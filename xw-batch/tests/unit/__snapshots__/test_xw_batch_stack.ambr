@@ -327,6 +327,7 @@
           'Description': 'Workgroup for all users',
           'Name': 'all_users',
           'WorkGroupConfiguration': dict({
+            'EnforceWorkGroupConfiguration': False,
             'ResultConfiguration': dict({
               'OutputLocation': dict({
                 'Fn::Join': list([

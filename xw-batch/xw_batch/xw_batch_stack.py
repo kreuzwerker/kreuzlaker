@@ -279,6 +279,8 @@ class XwBatchStack(aws_cdk.Stack):
             name="all_users",
             description="Workgroup for all users",
             work_group_configuration={
+                # Otherwise one cannot overwrite the output location
+                "enforceWorkGroupConfiguration": False,
                 "resultConfiguration": {
                     # I haven't found a way to use per user locations: it's either one workgroup
                     # per user or a shared location...
