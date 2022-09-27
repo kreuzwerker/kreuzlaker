@@ -416,8 +416,8 @@ class XwBatchStack(aws_cdk.Stack):
                         "Condition": {
                             "StringLike": {
                                 "s3:prefix": [
-                                    "/users/user_${aws:username}/*",
-                                    "/users/shared/",
+                                    "users/user_${aws:username}/*",
+                                    "users/shared/*",
                                 ]
                             }
                         },

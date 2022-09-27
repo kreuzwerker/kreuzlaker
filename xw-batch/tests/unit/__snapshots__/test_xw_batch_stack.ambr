@@ -202,8 +202,8 @@
                 'Condition': dict({
                   'StringLike': dict({
                     's3:prefix': list([
-                      '/users/user_${aws:username}/*',
-                      '/users/shared/',
+                      'users/user_${aws:username}/*',
+                      'users/shared/*',
                     ]),
                   }),
                 }),
