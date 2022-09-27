@@ -18,6 +18,31 @@
       }),
     }),
     'Resources': dict({
+      'allowmanageownaccesskeysABF6A618': dict({
+        'Properties': dict({
+          'Description': 'Allow users to create and update their own access keys.',
+          'Path': '/',
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  'iam:CreateAccessKey',
+                  'iam:DeleteAccessKey',
+                  'iam:GetAccessKeyLastUsed',
+                  'iam:GetUser',
+                  'iam:ListAccessKeys',
+                  'iam:UpdateAccessKey',
+                ]),
+                'Effect': 'Allow',
+                'Resource': 'arn:aws:iam::*:user/${aws:username}',
+                'Sid': 'ManageOwnAccessKeys',
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+        }),
+        'Type': 'AWS::IAM::ManagedPolicy',
+      }),
       'allowusersathenaaccessmanagedpolicy1FE7324E': dict({
         'Properties': dict({
           'Description': 'Allow athena access to users.',
@@ -644,6 +669,9 @@
           'ManagedPolicyArns': list([
             dict({
               'Ref': 'allowusersathenaaccessmanagedpolicy1FE7324E',
+            }),
+            dict({
+              'Ref': 'allowmanageownaccesskeysABF6A618',
             }),
           ]),
         }),

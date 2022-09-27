@@ -483,3 +483,33 @@ class XwBatchStack(aws_cdk.Stack):
         self.users_and_groups.get_group(GROUP_DATA_LAKE_ATHENA_USER).add_managed_policy(
             self.allow_users_athena_access_managed_policy
         )
+        self.allow_manage_own_access_keys_policy_document = aws_iam.PolicyDocument(
+            statements=[
+                aws_iam.PolicyStatement.from_json(
+                    {
+                        "Sid": "ManageOwnAccessKeys",
+                        "Effect": "Allow",
+                        "Action": [
+                            "iam:CreateAccessKey",
+                            "iam:DeleteAccessKey",
+                            "iam:GetAccessKeyLastUsed",
+                            "iam:GetUser",
+                            "iam:ListAccessKeys",
+                            "iam:UpdateAccessKey",
+                        ],
+                        "Resource": "arn:aws:iam::*:user/${aws:username}",
+                    }
+                )
+            ]
+        )
+        self.allow_manage_own_access_keys_managed_policy = aws_iam.ManagedPolicy(
+            self,
+            "allow_manage_own_access_keys",
+            document=self.allow_manage_own_access_keys_policy_document,
+            # Do not set to not have problems when deploying any changes to the policy. See best practises for cdk
+            # managed_policy_name="AllowManageOwnAccessKeys",
+            description="Allow users to create and update their own access keys.",
+        )
+        self.users_and_groups.get_group(GROUP_DATA_LAKE_ATHENA_USER).add_managed_policy(
+            self.allow_manage_own_access_keys_managed_policy
+        )
