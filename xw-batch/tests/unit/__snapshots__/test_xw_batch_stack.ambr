@@ -11,7 +11,6 @@
       'allowusersathenaaccessmanagedpolicy1FE7324E': dict({
         'Properties': dict({
           'Description': 'Allow athena access to users.',
-          'ManagedPolicyName': 'AllowAthenaAccessToUsers',
           'Path': '/',
           'PolicyDocument': dict({
             'Statement': list([
@@ -705,7 +704,6 @@
       'orgusersandgroupspolicyallowpasswordchanges7A9EFD98': dict({
         'Properties': dict({
           'Description': 'Allow password changed for users.',
-          'ManagedPolicyName': 'AllowPasswordChanges',
           'Path': '/',
           'PolicyDocument': dict({
             'Statement': list([

@@ -351,7 +351,7 @@ def test_athena_user_managed_policy(template: Template, stack: XwBatchStack) -> 
     template.has_resource_properties(
         "AWS::IAM::ManagedPolicy",
         {
-            "ManagedPolicyName": "AllowAthenaAccessToUsers",
+            "Description": "Allow athena access to users.",
             "Path": "/",
             "PolicyDocument": {
                 "Statement": statements_capture,
