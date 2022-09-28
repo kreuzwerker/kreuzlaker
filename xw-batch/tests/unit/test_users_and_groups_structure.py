@@ -53,7 +53,7 @@ def test_org_users_and_groups_structure(
     ouag_template.has_resource_properties(
         "AWS::IAM::ManagedPolicy",
         {
-            "ManagedPolicyName": "AllowPasswordChanges",
+            "Description": "Allow password changed for users.",
             "PolicyDocument": {
                 "Statement": [
                     {

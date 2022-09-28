@@ -37,7 +37,6 @@
       'OrgUsersAndGroupspolicyallowpasswordchanges91D72591': dict({
         'Properties': dict({
           'Description': 'Allow password changed for users.',
-          'ManagedPolicyName': 'AllowPasswordChanges',
           'Path': '/',
           'PolicyDocument': dict({
             'Statement': list([
