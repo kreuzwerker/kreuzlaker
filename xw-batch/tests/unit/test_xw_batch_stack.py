@@ -87,9 +87,7 @@ def _filter_actions(
                 yield action
 
 
-def _one(
-    statements: typing.Generator[typing.Dict[str, typing.Any], None, None]
-) -> typing.Dict[str, typing.Any]:
+def _one(statements: typing.Generator[typing.Dict[str, typing.Any], None, None]) -> typing.Dict[str, typing.Any]:
     stmts = list(statements)
     assert len(stmts) == 1
     return stmts[0]
@@ -112,9 +110,7 @@ def test_example_data_created(stack: XwBatchStack):
     assert stack.scoofy_example_data.target_bucket == stack.s3_raw_bucket
 
 
-def test_cloudwatch_access_for_debugging_user(
-    template: Template, stack: XwBatchStack
-) -> None:
+def test_cloudwatch_access_for_debugging_user(template: Template, stack: XwBatchStack) -> None:
     template.has_resource_properties(
         "AWS::IAM::Group",
         {
@@ -251,9 +247,7 @@ def test_all_s3_buckets_honour_stack_removal_policy(
     keep_data_resources_on_destroy: bool, expected_policy: str, match_tags: bool
 ):
     app = aws_cdk.App()
-    stack = XwBatchStack(
-        app, "xw-batch", keep_data_resources_on_destroy=keep_data_resources_on_destroy
-    )
+    stack = XwBatchStack(app, "xw-batch", keep_data_resources_on_destroy=keep_data_resources_on_destroy)
     template = Template.from_stack(stack)
 
     for name, resource in template.find_resources(type="AWS::S3::Bucket").items():
@@ -261,23 +255,17 @@ def test_all_s3_buckets_honour_stack_removal_policy(
         assert resource["DeletionPolicy"] == expected_policy
         assert resource["UpdateReplacePolicy"] == expected_policy
         if match_tags:
-            assert {"Key": "aws-cdk:auto-delete-objects", "Value": "true"} in resource[
-                "Properties"
-            ]["Tags"]
+            assert {"Key": "aws-cdk:auto-delete-objects", "Value": "true"} in resource["Properties"]["Tags"]
 
 
 def _join_arn_ref(arn_ref: dict, add_on: str):
     return {"Fn::Join": ["", [arn_ref, add_on]]}
 
 
-def test_raw_data_s3_bucket_access_for_debugging_user(
-    template: Template, stack: XwBatchStack
-) -> None:
+def test_raw_data_s3_bucket_access_for_debugging_user(template: Template, stack: XwBatchStack) -> None:
     # stack.resolve() returns CF references to items by name or arn (maybe more?)
     # The api doc is ... unhelpful: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.Stack.html#resolveobj
-    ref_group_name = stack.resolve(
-        stack.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING).group_name
-    )
+    ref_group_name = stack.resolve(stack.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING).group_name)
     ref_bucket_arn = stack.resolve(stack.s3_raw_bucket.bucket_arn)
     wanted_bucket_resources = [
         # The bucket itself
@@ -335,9 +323,7 @@ def test_athena_user_managed_policy(template: Template, stack: XwBatchStack) -> 
 
     ref_raw_bucket_arn = stack.resolve(stack.s3_raw_bucket.bucket_arn)
     ref_query_result_bucket_arn = stack.resolve(stack.s3_query_result_bucket.bucket_arn)
-    ref_datalake_converted_arn = stack.resolve(
-        stack.raw_converted_database.database_arn
-    )
+    ref_datalake_converted_arn = stack.resolve(stack.raw_converted_database.database_arn)
     # for some reason, this arn has the "Partition" as a Ref and so won't match when doing
     # a normal "==" comparison against whatever is in the IAM statement. Fix that..
     # resolved:  {"Fn::Join": ["",["arn:",{"Ref": "AWS::Partition"}, ":glue:", ...]]}
@@ -411,58 +397,32 @@ def test_athena_user_managed_policy(template: Template, stack: XwBatchStack) -> 
                 ],
             )
         )
-    glue_datalake_stmt = _one(
-        _filter_by_resource(statements, contain=ref_datalake_converted_arn)
-    )
+    glue_datalake_stmt = _one(_filter_by_resource(statements, contain=ref_datalake_converted_arn))
     # users are NOT allowed to write
-    assert _empty(
-        _filter_actions(
-            glue_datalake_stmt, matches=["glue:Create", "glue:Update", "glue:Delete"]
-        )
-    )
+    assert _empty(_filter_actions(glue_datalake_stmt, matches=["glue:Create", "glue:Update", "glue:Delete"]))
     # Only read
     assert _exists(_filter_actions(glue_datalake_stmt, matches=["glue:Get"]))
 
     # query result bucket access: users are allowed only a few things and only that
-    query_result_bucket_stmt = _one(
-        _filter_by_resource(statements, match="/users/user_${aws:username}/*")
-    )
-    assert _empty(
-        _filter_actions(
-            query_result_bucket_stmt, excludes=["s3:Put", "s3:Get", "s3:Abort"]
-        )
-    )
-    assert _exists(
-        _filter_actions(
-            query_result_bucket_stmt, matches=["s3:Put", "s3:Get", "s3:Abort"]
-        )
-    )
+    query_result_bucket_stmt = _one(_filter_by_resource(statements, match="/users/user_${aws:username}/*"))
+    assert _empty(_filter_actions(query_result_bucket_stmt, excludes=["s3:Put", "s3:Get", "s3:Abort"]))
+    assert _exists(_filter_actions(query_result_bucket_stmt, matches=["s3:Put", "s3:Get", "s3:Abort"]))
     # List is only allowed with a condition
-    query_result_bucket_stmt_list = _one(
-        _filter_by_resource(statements, equal=ref_query_result_bucket_arn)
-    )
+    query_result_bucket_stmt_list = _one(_filter_by_resource(statements, equal=ref_query_result_bucket_arn))
     print(query_result_bucket_stmt_list)
     assert "s3:ListBucket" in query_result_bucket_stmt_list["Action"]
     assert "Condition" in query_result_bucket_stmt_list
 
     # raw data bucket access: only read access, but unconditionally to the whole bucket
-    query_result_bucket_stmt = _one(
-        _filter_by_resource(statements, contain=ref_raw_bucket_arn)
-    )
-    assert _empty(
-        _filter_actions(query_result_bucket_stmt, excludes=["s3:List", "s3:Get"])
-    )
-    assert _exists(
-        _filter_actions(query_result_bucket_stmt, matches=["s3:List", "s3:Get"])
-    )
+    query_result_bucket_stmt = _one(_filter_by_resource(statements, contain=ref_raw_bucket_arn))
+    assert _empty(_filter_actions(query_result_bucket_stmt, excludes=["s3:List", "s3:Get"]))
+    assert _exists(_filter_actions(query_result_bucket_stmt, matches=["s3:List", "s3:Get"]))
 
 
 def test_athena_user_group(template: Template, stack: XwBatchStack) -> None:
     """Check that the group exists and has the required managed policy assigned"""
 
-    ref_policy_arn = stack.resolve(
-        stack.allow_users_athena_access_managed_policy.managed_policy_arn
-    )
+    ref_policy_arn = stack.resolve(stack.allow_users_athena_access_managed_policy.managed_policy_arn)
 
     template.has_resource_properties(
         "AWS::IAM::Group",

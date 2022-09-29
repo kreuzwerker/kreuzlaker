@@ -54,9 +54,7 @@ def _validate_group_name(group_name: str):
 
     # Spec according to https://docs.aws.amazon.com/IAM/latest/UserGuide/id_groups_create.html
     if not re.match(r"^[A-Za-z0-9+=,.@_-]+$", group_name):
-        raise RuntimeError(
-            f"Bad group name: {group_name}; Only [A-Za-z0-9+=,.@_-]+ allowed"
-        )
+        raise RuntimeError(f"Bad group name: {group_name}; Only [A-Za-z0-9+=,.@_-]+ allowed")
 
 
 def _to_id(name: str) -> str:

@@ -387,7 +387,7 @@
                   dict({
                     'Fn::Sub': 'cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}',
                   }),
-                  '/a0f7b030c2c343dbc460b01b28ed5da6e067e3a014ef45a1b0ae04b5e2b2aae2.py',
+                  '/5e0a058d3736d2ee26e117610788fc69d7d91ebec8d28c0ba453235e96a72e7b.py',
                 ]),
               ]),
             }),

@@ -30,14 +30,10 @@ class XwBatchStack(aws_cdk.Stack):
         account = aws_cdk.Stack.of(self).account
 
         stack_removal_policy = (
-            aws_cdk.RemovalPolicy.RETAIN
-            if keep_data_resources_on_destroy
-            else aws_cdk.RemovalPolicy.DESTROY
+            aws_cdk.RemovalPolicy.RETAIN if keep_data_resources_on_destroy else aws_cdk.RemovalPolicy.DESTROY
         )
         # the argument can only be non-None when we DESTROY the bucket
-        stack_auto_delete_objects_in_s3 = (
-            None if keep_data_resources_on_destroy else True
-        )
+        stack_auto_delete_objects_in_s3 = None if keep_data_resources_on_destroy else True
 
         # s3 bucket for raw data
         self.s3_raw_bucket = aws_s3.Bucket(
@@ -82,9 +78,7 @@ class XwBatchStack(aws_cdk.Stack):
             def __post_init__(self):
                 self.raw_table_id = self.raw_table_path.replace("/", "-")
                 self.converted_table_id = self.converted_table_name.replace("/", "-")
-                self.raw_bucket_uri = (
-                    f"s3://{_s3_raw_bucket.bucket_name}{self.raw_table_path}"
-                )
+                self.raw_bucket_uri = f"s3://{_s3_raw_bucket.bucket_name}{self.raw_table_path}"
                 self.converted_bucket_uri = f"s3://{_s3_raw_bucket.bucket_name}/converted/{self.converted_table_name}"
 
         raw_table_configs = [
@@ -103,16 +97,12 @@ class XwBatchStack(aws_cdk.Stack):
             id=raw_glue_iam_role_name,
             assumed_by=aws_iam.ServicePrincipal("glue.amazonaws.com"),
         )
-        glue_policy = aws_iam.ManagedPolicy.from_aws_managed_policy_name(
-            "service-role/AWSGlueServiceRole"
-        )
+        glue_policy = aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole")
         role.add_managed_policy(glue_policy)
         self.s3_raw_bucket.grant_read_write(role)
 
         # For debugging failing glue jobs and so on
-        self.s3_raw_bucket.grant_read(
-            self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING)
-        )
+        self.s3_raw_bucket.grant_read(self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING))
 
         # add Glue role to convert the data to parquet
         self.glue_converted_role = aws_iam.Role(
@@ -120,9 +110,7 @@ class XwBatchStack(aws_cdk.Stack):
             id=raw_converted_glue_iam_role_name,
             assumed_by=aws_iam.ServicePrincipal("glue.amazonaws.com"),
         )
-        glue_policy_transformed = aws_iam.ManagedPolicy.from_aws_managed_policy_name(
-            "service-role/AWSGlueServiceRole"
-        )
+        glue_policy_transformed = aws_iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSGlueServiceRole")
         self.glue_converted_role.add_managed_policy(glue_policy_transformed)
         self.s3_raw_bucket.grant_read_write(self.glue_converted_role)
 
@@ -173,11 +161,7 @@ class XwBatchStack(aws_cdk.Stack):
                 role=role.role_arn,
                 database_name=raw_data_base_name,
                 targets=aws_glue.CfnCrawler.TargetsProperty(
-                    s3_targets=[
-                        aws_glue.CfnCrawler.S3TargetProperty(
-                            path=table_config.raw_bucket_uri
-                        )
-                    ]
+                    s3_targets=[aws_glue.CfnCrawler.S3TargetProperty(path=table_config.raw_bucket_uri)]
                 ),
             )
 
@@ -222,14 +206,8 @@ class XwBatchStack(aws_cdk.Stack):
         # Give a debugging group access to the logs
         # TODO: maybe restrict to glue logs? But if we get rif of the crawler, there are no logs,
         #       so lets keep it broad for now
-        cloudwatch_read_only_policy = (
-            aws_iam.ManagedPolicy.from_aws_managed_policy_name(
-                "CloudWatchReadOnlyAccess"
-            )
-        )
-        self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING).add_managed_policy(
-            cloudwatch_read_only_policy
-        )
+        cloudwatch_read_only_policy = aws_iam.ManagedPolicy.from_aws_managed_policy_name("CloudWatchReadOnlyAccess")
+        self.users_and_groups.get_group(GROUP_DATA_LAKE_DEBUGGING).add_managed_policy(cloudwatch_read_only_policy)
 
         # Athena
         # The idea: we have one single bucket for all athena query results, so also transformed data on "prod" which
