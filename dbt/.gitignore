@@ -1,8 +1,7 @@
 # dbt
-logs/
-target/
-dbt_packages/
-bi-dbt_latest.tar.gz
+*/logs/
+*/target/
+*/dbt_packages/
 
 
 # Byte-compiled / optimized / DLL files
