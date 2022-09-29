@@ -357,6 +357,8 @@ def test_athena_user_managed_policy(template: Template, stack: XwBatchStack) -> 
     # users can do basically everything in the workgroup
     # -> don't care about the details, just that there is such a statement
     assert _one(_filter_by_resource(statements, match=":workgroup/all_users"))
+    # ... and is the only one
+    assert _one(_filter_by_resource(statements, match=":workgroup/"))
 
     # Glue: again, users should only be able to work in their own database
     # this is in the same statement, but we want to catch both;
@@ -433,8 +435,8 @@ def test_athena_user_group(template: Template, stack: XwBatchStack) -> None:
     )
 
 
-def test_athena_work_group(template: Template, stack: XwBatchStack) -> None:
-    """Check that a workgroup exists and has the required output location"""
+def test_athena_user_work_group(template: Template, stack: XwBatchStack) -> None:
+    """Check that a user workgroup exists and has the required output location"""
 
     ref_bucket_name = stack.resolve(stack.s3_query_result_bucket.bucket_name)
     template.has_resource_properties(
