@@ -455,5 +455,41 @@ def test_athena_user_work_group(template: Template, stack: XwBatchStack) -> None
     )
 
 
+def test_athena_prod_dbt_run_container_repo(template: Template, stack: XwBatchStack) -> None:
+    lifecycle_capture = Capture()
+    template.has_resource(
+        "AWS::ECR::Repository",
+        {
+            "DeletionPolicy": "Retain",
+        },
+    )
+    template.has_resource_properties(
+        "AWS::ECR::Repository",
+        {
+            "ImageScanningConfiguration": {
+                "ScanOnPush": True,
+            },
+            "ImageTagMutability": "MUTABLE",
+            "LifecyclePolicy": {
+                "LifecyclePolicyText": lifecycle_capture,
+            },
+            "RepositoryName": "dbt-run",
+        },
+    )
+    expected_lifecycle_rule = {
+        "rules": [
+            {
+                "rulePriority": 1,
+                "description": "Only keep the last 5 images",
+                "selection": {"tagStatus": "any", "countType": "imageCountMoreThan", "countNumber": 5},
+                "action": {"type": "expire"},
+            }
+        ]
+    }
+
+    lifecycle_rule = json.loads(lifecycle_capture.as_string())
+    assert lifecycle_rule == expected_lifecycle_rule
+
+
 def test_whole_stack_snapshot(snapshot, template: Template):
     assert template.to_json() == snapshot

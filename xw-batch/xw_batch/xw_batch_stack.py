@@ -1,7 +1,11 @@
 import dataclasses
 
 import aws_cdk
-from aws_cdk import aws_athena, aws_glue
+from aws_cdk import (
+    aws_athena,
+    aws_ecr,
+    aws_glue,
+)
 from aws_cdk import aws_glue_alpha as glue
 from aws_cdk import aws_iam, aws_s3, aws_s3_assets
 from constructs import Construct
@@ -330,6 +334,23 @@ class XwBatchStack(aws_cdk.Stack):
             self.allow_manage_own_access_keys_managed_policy
         )
 
+        # Setup for dbt prod
+
+        self.dbt_run_repository = aws_ecr.Repository(
+            self,
+            "dbt-run-repository",
+            repository_name="dbt-run",
+            image_scan_on_push=True,
+            image_tag_mutability=aws_ecr.TagMutability.MUTABLE,
+            lifecycle_rules=[aws_ecr.LifecycleRule(description="Only keep the last 5 images", max_image_count=5)],
+            removal_policy=stack_removal_policy,
+        )
+
+        aws_cdk.CfnOutput(
+            self,
+            "out-dbt-run-repository_uri",
+            value=self.dbt_run_repository.repository_uri_for_tag("latest"),
+        )
 
 def create_policy_document_for_athena_principal(
     *,

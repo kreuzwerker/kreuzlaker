@@ -4,6 +4,57 @@
       'outathenauserworkgroup': dict({
         'Value': 'all_users',
       }),
+      'outdbtrunrepositoryuri': dict({
+        'Value': dict({
+          'Fn::Join': list([
+            '',
+            list([
+              dict({
+                'Fn::Select': list([
+                  4,
+                  dict({
+                    'Fn::Split': list([
+                      ':',
+                      dict({
+                        'Fn::GetAtt': list([
+                          'dbtrunrepositoryE477C536',
+                          'Arn',
+                        ]),
+                      }),
+                    ]),
+                  }),
+                ]),
+              }),
+              '.dkr.ecr.',
+              dict({
+                'Fn::Select': list([
+                  3,
+                  dict({
+                    'Fn::Split': list([
+                      ':',
+                      dict({
+                        'Fn::GetAtt': list([
+                          'dbtrunrepositoryE477C536',
+                          'Arn',
+                        ]),
+                      }),
+                    ]),
+                  }),
+                ]),
+              }),
+              '.',
+              dict({
+                'Ref': 'AWS::URLSuffix',
+              }),
+              '/',
+              dict({
+                'Ref': 'dbtrunrepositoryE477C536',
+              }),
+              ':latest',
+            ]),
+          ]),
+        }),
+      }),
       'outxwbatchbucketathenaqueryresultsbucketname': dict({
         'Value': dict({
           'Ref': 'xwbatchbucketathenaqueryresults08D76E1C',
@@ -662,6 +713,21 @@
           }),
         }),
         'Type': 'AWS::Glue::Database',
+      }),
+      'dbtrunrepositoryE477C536': dict({
+        'DeletionPolicy': 'Retain',
+        'Properties': dict({
+          'ImageScanningConfiguration': dict({
+            'ScanOnPush': True,
+          }),
+          'ImageTagMutability': 'MUTABLE',
+          'LifecyclePolicy': dict({
+            'LifecyclePolicyText': '{"rules":[{"rulePriority":1,"description":"Only keep the last 5 images","selection":{"tagStatus":"any","countType":"imageCountMoreThan","countNumber":5},"action":{"type":"expire"}}]}',
+          }),
+          'RepositoryName': 'dbt-run',
+        }),
+        'Type': 'AWS::ECR::Repository',
+        'UpdateReplacePolicy': 'Retain',
       }),
       'orgusersandgroupsdatalakeathenauser25425960': dict({
         'Properties': dict({
