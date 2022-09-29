@@ -298,179 +298,17 @@ class XwBatchStack(aws_cdk.Stack):
             value=self.athena_user_workgroup.name,
         )
 
-        # Athena access has three levels
-        # 1. Access to athena and athena (specific) workgroups
-        # 2. Read/write access to the glue database + tables
-        # 3. Read/write access to the underlying data in s3
-        # The latter two usually come paired...
-        self.allow_users_athena_access_policy_document = aws_iam.PolicyDocument(
-            statements=[
-                aws_iam.PolicyStatement.from_json(
-                    {
-                        # Athena: usage rights
-                        "Effect": "Allow",
-                        "Action": [
-                            "athena:ListEngineVersions",
-                            "athena:ListWorkGroups",
-                            "athena:ListDataCatalogs",
-                            "athena:ListDatabases",
-                            "athena:GetDatabase",
-                            "athena:ListTableMetadata",
-                            "athena:GetTableMetadata",
-                        ],
-                        "Resource": "*",
-                    },
-                ),
-                aws_iam.PolicyStatement.from_json(
-                    {
-                        # Athena workgroup: usage rights
-                        "Effect": "Allow",
-                        "Action": [
-                            "athena:GetWorkGroup",
-                            "athena:BatchGetQueryExecution",
-                            "athena:GetQueryExecution",
-                            "athena:ListQueryExecutions",
-                            "athena:StartQueryExecution",
-                            "athena:StopQueryExecution",
-                            "athena:GetQueryResults",
-                            "athena:GetQueryResultsStream",
-                            "athena:CreateNamedQuery",
-                            "athena:GetNamedQuery",
-                            "athena:BatchGetNamedQuery",
-                            "athena:ListNamedQueries",
-                            "athena:DeleteNamedQuery",
-                            "athena:CreatePreparedStatement",
-                            "athena:GetPreparedStatement",
-                            "athena:ListPreparedStatements",
-                            "athena:UpdatePreparedStatement",
-                            "athena:DeletePreparedStatement",
-                        ],
-                        "Resource": [
-                            f"arn:aws:athena:{region}:{account}:workgroup/{self.athena_user_workgroup.name}",
-                        ],
-                    },
-                ),
-                aws_iam.PolicyStatement.from_json(
-                    {
-                        # Glue: read and write access to the user db and tables in this db
-                        "Effect": "Allow",
-                        "Action": [
-                            # read part
-                            "glue:BatchGetPartition",
-                            "glue:GetDatabase",
-                            "glue:GetDatabases",
-                            "glue:GetPartition",
-                            "glue:GetPartitions",
-                            "glue:GetTable",
-                            "glue:GetTables",
-                            "glue:GetTableVersion",
-                            "glue:GetTableVersions",
-                            # write part
-                            "glue:BatchCreatePartition",
-                            "glue:UpdateDatabase",
-                            "glue:DeleteDatabase",
-                            "glue:CreateTable",
-                            "glue:CreateDatabase",
-                            "glue:UpdateTable",
-                            "glue:BatchDeletePartition",
-                            "glue:BatchDeleteTable",
-                            "glue:DeleteTable",
-                            "glue:CreatePartition",
-                            "glue:DeletePartition",
-                            "glue:UpdatePartition",
-                        ],
-                        "Resource": [
-                            f"arn:aws:glue:{region}:{account}:catalog",
-                            # We want users to be able to create multiple databases (schema in dbt)
-                            # to allow for proper organizing the transformation results...
-                            # But hiding the databases from each other by adding the ${{aws:username}} part
-                            # does not work: we can have usernames with dots in it which would break the naming
-                            # convention for the databases (and identifiers). Therefor we allow users to see other
-                            # users databases, but still not the underlying data, if they use the proper prefix
-                            # (see next block, where s3 access is specified).
-                            f"arn:aws:glue:{region}:{account}:database/user_*",
-                            f"arn:aws:glue:{region}:{account}:table/user_*/*",
-                        ],
-                    },
-                ),
-                aws_iam.PolicyStatement.from_json(
-                    {
-                        # S3: write access to the Athena results bucket in /users/... prefix
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:PutObject",
-                            "s3:GetObject",
-                            "s3:AbortMultipartUpload",
-                            "s3:GetBucketLocation",
-                        ],
-                        "Resource": [
-                            self.s3_query_result_bucket.bucket_arn,
-                            # user specific
-                            f"{self.s3_query_result_bucket.bucket_arn}/users/user_${{aws:username}}/*",
-                            # shared, used per default in the workgroup
-                            f"{self.s3_query_result_bucket.bucket_arn}/users/shared/*",
-                        ],
-                    }
-                ),
-                aws_iam.PolicyStatement.from_json(
-                    {
-                        # S3: list access to the Athena results bucket in user prefix
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:ListBucket",
-                        ],
-                        "Resource": [
-                            self.s3_query_result_bucket.bucket_arn,
-                        ],
-                        "Condition": {
-                            "StringLike": {
-                                "s3:prefix": [
-                                    "users/user_${aws:username}/*",
-                                    "users/shared/*",
-                                ]
-                            }
-                        },
-                    }
-                ),
-                # Read access to the converted data lake data
-                aws_iam.PolicyStatement.from_json(
-                    {
-                        # Glue: read converted data in the data lake
-                        "Effect": "Allow",
-                        "Action": [
-                            "glue:BatchGetPartition",
-                            "glue:GetDatabase",
-                            "glue:GetDatabases",
-                            "glue:GetPartition",
-                            "glue:GetPartitions",
-                            "glue:GetTable",
-                            "glue:GetTables",
-                            "glue:GetTableVersion",
-                            "glue:GetTableVersions",
-                        ],
-                        "Resource": [
-                            f"arn:aws:glue:{region}:{account}:catalog",
-                            f"arn:aws:glue:{region}:{account}:database/{self.raw_converted_database.database_name}",
-                            f"arn:aws:glue:{region}:{account}:table/{self.raw_converted_database.database_name}/*",
-                        ],
-                    },
-                ),
-                aws_iam.PolicyStatement.from_json(
-                    {
-                        # S3: read converted data in the data lake
-                        "Effect": "Allow",
-                        "Action": [
-                            "s3:GetObject",
-                            "s3:ListBucket",
-                            "s3:GetBucketLocation",
-                        ],
-                        "Resource": [
-                            self.s3_raw_bucket.bucket_arn,
-                            self.s3_raw_bucket.bucket_arn + "/*",
-                        ],
-                    },
-                ),
-            ]
+        self.allow_users_athena_access_policy_document = create_policy_document_for_athena_principal(
+            account=account,
+            region=region,
+            workgroup=self.athena_user_workgroup,
+            # can't use ${aws:username} here as that might contain a dot!
+            allowed_glue_database_names="user_*",
+            query_result_bucket=self.s3_query_result_bucket,
+            # No slash at the beginning or end!
+            query_result_bucket_userspecific_s3_prefix="users/user_${aws:username}",
+            raw_converted_database=self.raw_converted_database,
+            raw_bucket=self.s3_raw_bucket,
         )
         self.allow_users_athena_access_managed_policy = aws_iam.ManagedPolicy(
             self,
@@ -513,3 +351,191 @@ class XwBatchStack(aws_cdk.Stack):
         self.users_and_groups.get_group(GROUP_DATA_LAKE_ATHENA_USER).add_managed_policy(
             self.allow_manage_own_access_keys_managed_policy
         )
+
+
+def create_policy_document_for_athena_principal(
+    *,
+    account: str,
+    region: str,
+    workgroup: aws_athena.CfnWorkGroup,
+    allowed_glue_database_names: str,
+    query_result_bucket: aws_s3.Bucket,
+    query_result_bucket_userspecific_s3_prefix: str,
+    raw_converted_database: glue.Database,
+    raw_bucket: aws_s3.Bucket,
+):
+    # Athena access has three levels
+    # 1. Access to athena and athena (specific) workgroups
+    # 2. Read/write access to the glue database + tables
+    # 3. Read/write access to the underlying data in s3
+    # The latter two usually come paired...
+
+    return aws_iam.PolicyDocument(
+        statements=[
+            aws_iam.PolicyStatement.from_json(
+                {
+                    # Athena: usage rights
+                    "Effect": "Allow",
+                    "Action": [
+                        "athena:ListEngineVersions",
+                        "athena:ListWorkGroups",
+                        "athena:ListDataCatalogs",
+                        "athena:ListDatabases",
+                        "athena:GetDatabase",
+                        "athena:ListTableMetadata",
+                        "athena:GetTableMetadata",
+                    ],
+                    "Resource": "*",
+                },
+            ),
+            aws_iam.PolicyStatement.from_json(
+                {
+                    # Athena workgroup: usage rights
+                    "Effect": "Allow",
+                    "Action": [
+                        "athena:GetWorkGroup",
+                        "athena:BatchGetQueryExecution",
+                        "athena:GetQueryExecution",
+                        "athena:ListQueryExecutions",
+                        "athena:StartQueryExecution",
+                        "athena:StopQueryExecution",
+                        "athena:GetQueryResults",
+                        "athena:GetQueryResultsStream",
+                        "athena:CreateNamedQuery",
+                        "athena:GetNamedQuery",
+                        "athena:BatchGetNamedQuery",
+                        "athena:ListNamedQueries",
+                        "athena:DeleteNamedQuery",
+                        "athena:CreatePreparedStatement",
+                        "athena:GetPreparedStatement",
+                        "athena:ListPreparedStatements",
+                        "athena:UpdatePreparedStatement",
+                        "athena:DeletePreparedStatement",
+                    ],
+                    "Resource": [
+                        f"arn:aws:athena:{region}:{account}:workgroup/{workgroup.name}",
+                    ],
+                },
+            ),
+            aws_iam.PolicyStatement.from_json(
+                {
+                    # Glue: read and write access to the user db and tables in this db
+                    "Effect": "Allow",
+                    "Action": [
+                        # read part
+                        "glue:BatchGetPartition",
+                        "glue:GetDatabase",
+                        "glue:GetDatabases",
+                        "glue:GetPartition",
+                        "glue:GetPartitions",
+                        "glue:GetTable",
+                        "glue:GetTables",
+                        "glue:GetTableVersion",
+                        "glue:GetTableVersions",
+                        # write part
+                        "glue:BatchCreatePartition",
+                        "glue:UpdateDatabase",
+                        "glue:DeleteDatabase",
+                        "glue:CreateTable",
+                        "glue:CreateDatabase",
+                        "glue:UpdateTable",
+                        "glue:BatchDeletePartition",
+                        "glue:BatchDeleteTable",
+                        "glue:DeleteTable",
+                        "glue:CreatePartition",
+                        "glue:DeletePartition",
+                        "glue:UpdatePartition",
+                    ],
+                    "Resource": [
+                        f"arn:aws:glue:{region}:{account}:catalog",
+                        # We want users to be able to create multiple databases (schema in dbt)
+                        # to allow for proper organizing the transformation results...
+                        # But hiding the databases from each other by adding the ${{aws:username}} part
+                        # does not work: we can have usernames with dots in it which would break the naming
+                        # convention for the databases (and identifiers). Therefor we allow users to see other
+                        # users databases, but still not the underlying data, if they use the proper prefix
+                        # (see next block, where s3 access is specified).
+                        f"arn:aws:glue:{region}:{account}:database/{allowed_glue_database_names}",
+                        f"arn:aws:glue:{region}:{account}:table/{allowed_glue_database_names}/*",
+                    ],
+                },
+            ),
+            aws_iam.PolicyStatement.from_json(
+                {
+                    # S3: write access to the Athena results bucket in /users/... prefix
+                    "Effect": "Allow",
+                    "Action": [
+                        "s3:PutObject",
+                        "s3:GetObject",
+                        "s3:AbortMultipartUpload",
+                        "s3:GetBucketLocation",
+                    ],
+                    "Resource": [
+                        query_result_bucket.bucket_arn,
+                        # user specific
+                        f"{query_result_bucket.bucket_arn}/{query_result_bucket_userspecific_s3_prefix}/*",
+                        # shared, used per default in the workgroup
+                        f"{query_result_bucket.bucket_arn}/users/shared/*",
+                    ],
+                }
+            ),
+            aws_iam.PolicyStatement.from_json(
+                {
+                    # S3: list access to the Athena results bucket in user prefix
+                    "Effect": "Allow",
+                    "Action": [
+                        "s3:ListBucket",
+                    ],
+                    "Resource": [
+                        query_result_bucket.bucket_arn,
+                    ],
+                    "Condition": {
+                        "StringLike": {
+                            "s3:prefix": [
+                                f"{query_result_bucket_userspecific_s3_prefix}/*",
+                                "users/shared/*",
+                            ]
+                        }
+                    },
+                }
+            ),
+            # Read access to the converted data lake data
+            aws_iam.PolicyStatement.from_json(
+                {
+                    # Glue: read converted data in the data lake
+                    "Effect": "Allow",
+                    "Action": [
+                        "glue:BatchGetPartition",
+                        "glue:GetDatabase",
+                        "glue:GetDatabases",
+                        "glue:GetPartition",
+                        "glue:GetPartitions",
+                        "glue:GetTable",
+                        "glue:GetTables",
+                        "glue:GetTableVersion",
+                        "glue:GetTableVersions",
+                    ],
+                    "Resource": [
+                        f"arn:aws:glue:{region}:{account}:catalog",
+                        f"arn:aws:glue:{region}:{account}:database/{raw_converted_database.database_name}",
+                        f"arn:aws:glue:{region}:{account}:table/{raw_converted_database.database_name}/*",
+                    ],
+                },
+            ),
+            aws_iam.PolicyStatement.from_json(
+                {
+                    # S3: read converted data in the data lake
+                    "Effect": "Allow",
+                    "Action": [
+                        "s3:GetObject",
+                        "s3:ListBucket",
+                        "s3:GetBucketLocation",
+                    ],
+                    "Resource": [
+                        raw_bucket.bucket_arn,
+                        raw_bucket.bucket_arn + "/*",
+                    ],
+                },
+            ),
+        ]
+    )
