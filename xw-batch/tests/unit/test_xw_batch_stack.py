@@ -4,6 +4,7 @@ import typing
 import aws_cdk
 import pytest
 from aws_cdk.assertions import Capture, Match, Template
+from glom import glom  # type: ignore
 
 from xw_batch.users_and_groups import (
     GROUP_DATA_LAKE_ATHENA_USER,
@@ -489,6 +490,156 @@ def test_athena_prod_dbt_run_container_repo(template: Template, stack: XwBatchSt
 
     lifecycle_rule = json.loads(lifecycle_capture.as_string())
     assert lifecycle_rule == expected_lifecycle_rule
+
+
+def test_athena_dbt_prod_fargate_ecs_task(template: Template, stack: XwBatchStack) -> None:
+    """Checks some basics about the fargate task"""
+    image_capture = Capture()
+    task_role_capture = Capture()
+    # The two interesting parts are the awslogs-stream-prefix because it contains the id and the environment,
+    # because we need that line to actually run against the prod database. The rest is nice to have...
+    template.has_resource_properties(
+        "AWS::ECS::TaskDefinition",
+        {
+            "ContainerDefinitions": [
+                {
+                    "Environment": [{"Name": "DBT_TARGET", "Value": "prod"}],
+                    "Essential": True,
+                    "Image": image_capture,
+                    "LogConfiguration": {
+                        "LogDriver": "awslogs",
+                        "Options": {
+                            "awslogs-region": {"Ref": "AWS::Region"},
+                            "awslogs-stream-prefix": "dbtScheduledFargateTask",
+                        },
+                    },
+                    "Name": "ScheduledContainer",
+                },
+            ],
+            "Cpu": "2048",
+            "Memory": "4096",
+            "NetworkMode": "awsvpc",
+            "RequiresCompatibilities": [
+                "FARGATE",
+            ],
+            "TaskRoleArn": task_role_capture,
+        },
+    )
+    assert "dbtrun" in json.dumps(image_capture.as_object())
+    assert ":latest" in json.dumps(image_capture.as_object())
+
+    task_definitions = template.find_resources("AWS::ECS::TaskDefinition")
+    assert len(task_definitions) > 0, f"{task_definitions.keys()}"
+    db_run_task_definition = {
+        name: value
+        for name, value in task_definitions.items()
+        # We identify the task definition by the log stream prefix, which per default
+        # should be the same as the id of the ScheduledFargateTask
+        if glom(value, "Properties.ContainerDefinitions.0.LogConfiguration.Options.awslogs-stream-prefix", default="")
+        == "dbtScheduledFargateTask"
+    }
+    assert len(db_run_task_definition) == 1, f"{task_definitions}"
+
+    # Get the logical id of that task definition for the check for the schedule
+    db_run_task_definition_name = next(iter(db_run_task_definition.keys()))
+    assert db_run_task_definition_name
+
+    # Check the role under which the image will run: does it have the right policy attached?
+    ref_managed_policy_arn = stack.resolve(stack.allow_prod_athena_access_managed_policy.managed_policy_arn)
+
+    task_role_logical_id = task_role_capture.as_object()["Fn::GetAtt"][0]
+    role = template.find_resources("AWS::IAM::Role")[task_role_logical_id]
+    assert role["Properties"] == {
+        "AssumeRolePolicyDocument": {
+            "Statement": [
+                {
+                    "Action": "sts:AssumeRole",
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "ecs-tasks.amazonaws.com",
+                    },
+                },
+            ],
+            "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [ref_managed_policy_arn],
+    }
+
+    # The fargate task for db_run_task_definition_name is scheduled
+    template.has_resource_properties(
+        "AWS::Events::Rule",
+        {
+            "ScheduleExpression": "cron(23 1 ? * * *)",
+            "State": "ENABLED",
+            "Targets": [
+                {
+                    # Don't care about the cluster
+                    "Arn": Match.any_value(),
+                    "EcsParameters": {
+                        "LaunchType": "FARGATE",
+                        "NetworkConfiguration": {
+                            "AwsVpcConfiguration": {
+                                "AssignPublicIp": "DISABLED",
+                                # Don't care about the automatically created vpc thingies
+                                "SecurityGroups": Match.any_value(),
+                                "Subnets": Match.any_value(),
+                            },
+                        },
+                        "PlatformVersion": "LATEST",
+                        "TaskCount": 1,
+                        # This line actually identifies the right schedule for the dbt-run task definition
+                        "TaskDefinitionArn": {"Ref": db_run_task_definition_name},
+                    },
+                    "Id": "Target0",
+                    "Input": "{}",
+                    # Don't care about the execution role
+                    "RoleArn": Match.any_value(),
+                },
+            ],
+        },
+    )
+
+
+def test_athena_prod_managed_policy(template: Template, stack: XwBatchStack) -> None:
+    """Ensures the policy is sane (the main check is the one for the user)"""
+    statements_capture = Capture()
+    template.has_resource_properties(
+        "AWS::IAM::ManagedPolicy",
+        {
+            "Description": "Allow athena access to dbt prod.",
+            "Path": "/",
+            "PolicyDocument": {
+                "Statement": statements_capture,
+                "Version": "2012-10-17",
+            },
+        },
+    )
+    statements = statements_capture.as_array()
+
+    # access to the dbt_prod workgroup
+    assert _one(_filter_by_resource(statements, match=":workgroup/dbt_prod"))
+
+    # query result bucket access: prod has a root level prefix and write access
+    query_result_bucket_stmt = _one(_filter_by_resource(statements, match="/prod/*"))
+
+    assert _exists(_filter_actions(query_result_bucket_stmt, matches=["s3:Put", "s3:Get", "s3:Abort"]))
+
+    # Glue write access to the prod_* databases
+    for resource_match in (
+        ":table/prod_*/*",
+        ":database/prod_*",
+    ):
+        stmt = _one(_filter_by_resource(statements, match=resource_match))
+        assert _exists(
+            _filter_actions(
+                stmt,
+                matches=[
+                    "glue:CreateDatabase",
+                    "glue:UpdateDatabase",
+                    "glue:DeleteDatabase",
+                ],
+            )
+        )
 
 
 def test_whole_stack_snapshot(snapshot, template: Template):

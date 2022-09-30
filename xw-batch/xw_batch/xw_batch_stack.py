@@ -2,8 +2,11 @@ import dataclasses
 
 import aws_cdk
 from aws_cdk import (
+    aws_applicationautoscaling,
     aws_athena,
     aws_ecr,
+    aws_ecs,
+    aws_ecs_patterns,
     aws_glue,
 )
 from aws_cdk import aws_glue_alpha as glue
@@ -351,6 +354,81 @@ class XwBatchStack(aws_cdk.Stack):
             "out-dbt-run-repository_uri",
             value=self.dbt_run_repository.repository_uri_for_tag("latest"),
         )
+
+        self.athena_prod_workgroup = aws_athena.CfnWorkGroup(
+            self,
+            id="athena_prod_workgroup",
+            name="dbt_prod",
+            description="Workgroup for the dbt prod usage",
+            work_group_configuration={
+                # Otherwise one cannot overwrite the output location
+                "enforceWorkGroupConfiguration": False,
+                "resultConfiguration": {
+                    "encryptionConfiguration": {
+                        "encryptionOption": "SSE_S3",
+                    },
+                    # I haven't found a way to use per user locations: it's either one workgroup
+                    # per user or a shared location...
+                    "outputLocation": f"s3://{self.s3_query_result_bucket.bucket_name}/prod/",
+                },
+            },
+        )
+
+        aws_cdk.CfnOutput(
+            self,
+            "out-athena_prod_workgroup",
+            value=self.athena_prod_workgroup.name,
+        )
+
+        self.allow_prod_athena_access_policy_document = create_policy_document_for_athena_principal(
+            account=account,
+            region=region,
+            workgroup=self.athena_prod_workgroup,
+            allowed_glue_database_names="prod_*",
+            query_result_bucket=self.s3_query_result_bucket,
+            # No slash at the beginning or end!
+            query_result_bucket_userspecific_s3_prefix="prod",
+            raw_converted_database=self.raw_converted_database,
+            raw_bucket=self.s3_raw_bucket,
+        )
+        self.allow_prod_athena_access_managed_policy = aws_iam.ManagedPolicy(
+            self,
+            "allow_prod_athena_access_managed_policy",
+            document=self.allow_prod_athena_access_policy_document,
+            # Do not set to not have problems when deploying any changes to the policy. See best practises for cdk
+            # managed_policy_name="AllowAthenaAccessToUsers",
+            description="Allow athena access to dbt prod.",
+        )
+
+        # We do not add a cluster (nor a vpc), so both are created for us in the ScheduledFargateTask
+
+        self.dbt_runner_task = aws_ecs_patterns.ScheduledFargateTask(
+            self,
+            id="dbtScheduledFargateTask",
+            scheduled_fargate_task_image_options=aws_ecs_patterns.ScheduledFargateTaskImageOptions(
+                # Latest => a revert will be a git revert + push!
+                image=aws_ecs.ContainerImage.from_ecr_repository(self.dbt_run_repository, tag="latest"),
+                # We do not need much, as the main work will be done on the athena service, but we want
+                # 2 vCPU and this is only possible with 4GB of mem. For the cpu definition: 1vCPU = 1024
+                # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+                memory_limit_mib=4096,
+                cpu=2048,
+                # Needed to actually trigger the use of the right "config" from dbt/profile-prod.yml
+                environment={"DBT_TARGET": "prod"},
+            ),
+            # daily at 0123 UTC
+            schedule=aws_applicationautoscaling.Schedule.cron(
+                minute="23",
+                hour="1",
+                month="*",
+                week_day="*",
+                year="*",
+            ),
+            platform_version=aws_ecs.FargatePlatformVersion.LATEST,  # type: ignore
+        )
+
+        self.dbt_runner_task.task_definition.task_role.add_managed_policy(self.allow_prod_athena_access_managed_policy)
+
 
 def create_policy_document_for_athena_principal(
     *,
