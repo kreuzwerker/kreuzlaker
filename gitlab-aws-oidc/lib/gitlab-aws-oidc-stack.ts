@@ -70,6 +70,29 @@ export class GitlabAWSOIDCStack extends Stack {
             )
         )
 
+        // for pushing a docker image to the corresponding ECR repo
+        // https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-push.html
+        this.gitlabPipelineRole.addToPolicy(iam.PolicyStatement.fromJson({
+                    "Effect": "Allow",
+                    "Action": [
+                        "ecr:CompleteLayerUpload",
+                        "ecr:UploadLayerPart",
+                        "ecr:InitiateLayerUpload",
+                        "ecr:BatchCheckLayerAvailability",
+                        "ecr:PutImage"
+                    ],
+                    "Resource": `arn:aws:ecr:${this.region}:${this.account}:repository/dbt-run`
+                }
+            )
+        );
+        this.gitlabPipelineRole.addToPolicy(iam.PolicyStatement.fromJson({
+                    "Effect": "Allow",
+                    "Action": "ecr:GetAuthorizationToken",
+                    "Resource": "*"
+                }
+            )
+        )
+
         // output the role arn for easier copy and paste into the gitlab pipeline
         new cdk.CfnOutput(this, 'PipelineRoleArn', {
             value: this.gitlabPipelineRole.roleArn,
