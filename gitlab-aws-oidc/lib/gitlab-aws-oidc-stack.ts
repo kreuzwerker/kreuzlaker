@@ -8,6 +8,7 @@ export interface GitlabAWSOIDCStackProps extends StackProps {
     allowedRepoToPush: string;
     allowedBranchesToPush: string[];
     gitlabHost: string;
+    thumbprints: string[];
 }
 
 export class GitlabAWSOIDCStack extends Stack {
@@ -15,7 +16,7 @@ export class GitlabAWSOIDCStack extends Stack {
 
     constructor(scope: Construct, id: string, props: GitlabAWSOIDCStackProps) {
         super(scope, id, props);
-        const {projectName, allowedRepoToPush, allowedBranchesToPush, gitlabHost} = props;
+        const {projectName, allowedRepoToPush, allowedBranchesToPush, gitlabHost, thumbprints} = props;
 
         const gitlabOIDCProvider = new iam.OpenIdConnectProvider(
             this,
@@ -24,6 +25,7 @@ export class GitlabAWSOIDCStack extends Stack {
                 // See https://docs.gitlab.com/ee/ci/cloud_services/aws/
                 url: `https://${gitlabHost}`,
                 clientIds: [`https://${gitlabHost}`],
+                thumbprints: thumbprints,
             }
         );
 

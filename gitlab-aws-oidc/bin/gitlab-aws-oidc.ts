@@ -20,6 +20,11 @@ new GitlabAWSOIDCStack(app, 'GitlabCICDIdentityStack', {
     ],
     // The gitlab instance hostname excluding https:// and without a slash at the end!
     gitlabHost: "gitlab.kreuzwerker.de",
+    // See https://stackoverflow.com/a/69247499/1380673 for a way how to obtain this thumbprint
+    // for some reason, the default one, if created without any thumbprint, was not the one from below
+    thumbprints: [
+        '933c6ddee95c9c41a40f9f50493d82be03ad87bf',
+    ],
     env: {
         region: "eu-central-1",
     },
