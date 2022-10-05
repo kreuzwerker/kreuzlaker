@@ -120,6 +120,7 @@ black:
   rules:
     - changes:
         - xw-batch/**/*
+        - .gitlab-ci.yml
   script:
     - *activate-xw-batch-environment
     - echo "Running black..."
