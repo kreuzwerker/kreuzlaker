@@ -36,6 +36,15 @@ default:
         - .cache/npm
 
 
+## When to create pipelines
+# prevent duplicate pipeline runs by only running the MR Event instead of push-to-branch event.
+# Otherwise, it runs on the default branch (=merges) and tags.
+# See https://docs.gitlab.com/ee/ci/yaml/workflow.html#workflowrules-templates and
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Workflows/MergeRequest-Pipelines.gitlab-ci.yml
+include:
+  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
+
+
 ## Snippets for re-usability
 .activate-xw-batch-environment: &activate-xw-batch-environment
   - cd xw-batch
