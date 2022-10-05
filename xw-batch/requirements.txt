@@ -1,12 +1,12 @@
-# Autogenerate from requirements.txt.in by 'make update-packages' at 2022-09-27T14:29
+# Autogenerate from requirements.txt.in by 'make update-packages' at 2022-10-05T20:46
 # DO NOT CHANGE, changes will be overwritten!
 
 attrs==22.1.0
-aws-cdk-lib==2.43.1
-aws-cdk.aws-glue-alpha==2.43.1a0
+aws-cdk-lib==2.44.0
+aws-cdk.aws-glue-alpha==2.44.0a0
 cattrs==22.1.0
 colored==1.4.3
-constructs==10.1.114
+constructs==10.1.122
 exceptiongroup==1.0.0rc9
 iniconfig==1.1.1
 jsii==1.69.0

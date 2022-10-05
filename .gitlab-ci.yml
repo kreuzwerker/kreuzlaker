@@ -163,7 +163,7 @@ deploy-gitlab-oidc-stack:
         - .cache/npm
   script:
     - echo "Installing cdk"
-    - cd ../gitlab-aws-oidc
+    - cd gitlab-aws-oidc
     - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
     - echo "Finished installing cdk"
     - echo "Installing awscli for deployments"
