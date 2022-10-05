@@ -1,142 +1,176 @@
-# we need an image with both nodejs and python on it, otherwise the tests won't work
-# Installing one or the other into the official nodejs/python images takes too much time
-# TODO: try to install one or the other locally and cache it?
-image: nikolaik/python-nodejs:python3.10-nodejs18-bullseye
-
-# Our shared runner is tagged with "docker", so all jobs need that as a tag to run on that runner
-
-# Change pip's cache directory to be inside the project directory since we can
-# only cache local items.
 variables:
+  # Configure to use whatever the gitlab OIDC stack defines
+  DEPLOYMENT_ROLE_ARN: arn:aws:iam::677474147593:role/gitlab-oidc-xw-batch-deployment
+  # Change pip's cache directory to be inside the project directory since we can
+  # only cache local items.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-# Pip's cache doesn't store the python packages
-# https://pip.pypa.io/en/stable/reference/pip_install/#caching
-#
-# If you want to also cache the installed packages, you have to install
-# them in a virtualenv and cache it as well.
-cache:
-  - key:
-      files:
-        - xw-batch/requirements.txt
-        - xw-batch/requirements-dev.txt
-    paths:
-      - .cache/pip
-      - xw-batch/.venv/
-  - key:
-      files:
-        - xw-batch/package-lock.json
-    paths:
-      - xw-batch/node_modules/
-      - .cache/npm
+default:
+  tags:
+    # Our shared runner is tagged with "docker", so all jobs need that as a tag to run on that runner
+    - docker
 
-# These commands are concat'ed before the script section in all the jobs below
-before_script:
-  - cd xw-batch # every later job assumes we are in this directory!
+  # Most of the jobs need an image with both nodejs and python on it, otherwise the tests won't work
+  # Installing one or the other into the official nodejs/python images takes too much time
+  # TODO: try to install one or the other locally and cache it?
+  image: nikolaik/python-nodejs:python3.10-nodejs18-bullseye
+
+  # Pip's cache doesn't store the python packages
+  # https://pip.pypa.io/en/stable/reference/pip_install/#caching
+  #
+  # If you want to also cache the installed packages, you have to install
+  # them in a virtualenv and cache it as well.
+  cache:
+    - key:
+        files:
+          - xw-batch/requirements.txt
+          - xw-batch/requirements-dev.txt
+      paths:
+        - .cache/pip
+        - xw-batch/.venv/
+    - key:
+        files:
+          - xw-batch/package-lock.json
+      paths:
+        - xw-batch/node_modules/
+        - .cache/npm
+
+
+## Snippets for re-usability
+.activate-xw-batch-environment: &activate-xw-batch-environment
+  - cd xw-batch
   - python3 --version  # For debugging
-  - python3 -m venv .venv
+  - echo "Activating environments"
   - source .venv/bin/activate
-  - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
   - export PATH=$PATH:./node_modules/.bin # to make the cdk command available
-  - node --version && npm root && command -v cdk   # For debugging
+  - node --version && npm root && command -v cdk && env  # For debugging
 
-stages: # List of stages for jobs, and their order of execution
+.assume-deployment-role-script: &assume-deployment-role-script
+  - echo "Getting AWS credentials for the deployment"
+  # for debugging: If your runner runs in aws, this will already output something sensible!
+  - aws sts get-caller-identity || true
+  - >
+    export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
+    $(aws sts assume-role-with-web-identity
+    --role-arn "${DEPLOYMENT_ROLE_ARN}"
+    --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
+    --web-identity-token $CI_JOB_JWT_V2
+    --duration-seconds 3600
+    --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
+    --output text))
+  - echo "Testing aws access"
+  # This should now output something or something different from the first call!
+  - aws sts get-caller-identity
+
+
+## List of stages for jobs, and their order of execution
+stages:
   - install-packages
   - run-static-checks
   - run-tests
-  - deploy
+  - deploy-oidc
 
-install-packages:
+## Jobs
+install-xw-batch-packages:
+  # via caching, all other default jobs will have python stuff installed
   stage: install-packages
-  tags:
-    - docker
+  rules:
+    - changes:
+        - xw-batch/**/*
   script:
-    - echo "Installing packages"
+    - cd xw-batch
+    - echo "Creating venv"
+    - python3 -m venv .venv
+    - source .venv/bin/activate
+    - echo "Installing python packages"
     - python3 -m pip install -r requirements.txt
     - python3 -m pip install -r requirements-dev.txt
-    # For the credentials to AWS...
+    - echo "Installing awscli for deployments"
     - python3 -m pip install awscli
+    - echo "Installing node packages"
+    - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
     - echo "Installation of packages complete."
 
 mypy:
   stage: run-static-checks
-  tags:
-    - docker
-  needs: [ 'install-packages' ]
+  rules:
+    - changes:
+        - xw-batch/**/*
   script:
+    - *activate-xw-batch-environment
     - echo "Running mypy..."
     - python3 -m mypy xw_batch tests lambdas glue
     - echo "No mypy issues found."
 
 black:
   stage: run-static-checks
-  tags:
-    - docker
-  needs: [ 'install-packages' ]
+  rules:
+    - changes:
+        - xw-batch/**/*
   script:
+    - *activate-xw-batch-environment
     - echo "Running black..."
     - python3 -m black --check --verbose -- xw_batch tests lambdas glue
     - echo "No black issues found."
 
 isort:
   stage: run-static-checks
-  tags:
-    - docker
-  needs: [ 'install-packages' ]
+  rules:
+    - changes:
+        - xw-batch/**/*
   script:
+    - *activate-xw-batch-environment
     - echo "Running isort..."
     - python3 -m isort --check-only xw_batch tests lambdas glue
     - echo "No isort issues found."
 
 flake8:
   stage: run-static-checks
-  tags:
-    - docker
-  needs: [ 'install-packages' ]
+  rules:
+    - changes:
+        - xw-batch/**/*
   script:
+    - *activate-xw-batch-environment
     - echo "Running flake8..."
     - python3 -m flake8 xw_batch tests lambdas glue
     - echo "No flake8 issues found."
 
 pytest:
   stage: run-tests
-  tags:
-    - docker
-  needs: [ 'install-packages' ]
+  rules:
+    - changes:
+        - xw-batch/**/*
   script:
+    - *activate-xw-batch-environment
     - echo "Running pytest..."
     - python3 -m pytest tests
     - echo "No pytest issues found."
 
-diff-gitlab-oidc-stack:
-  stage: deploy
-  only:
-    # Only run this when we push to the main branch = on merge...
-    # Given that the OIDC identity only has access from that branch, this prevents failures in merge request
-    # and accidental deploys :-)
-    - main@engineering/data-engineering/xw-data-toolkit
-  tags:
-    - docker
+deploy-gitlab-oidc-stack:
+  stage: deploy-oidc
+  rules:
+    # Only main has access to the deployment role!
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - gitlab-aws-oidc/**/*
+  cache:
+    - key:
+        files:
+          - gitlab-aws-oidc/package-lock.json
+      paths:
+        - gitlab-aws-oidc/node_modules/
+        - .cache/npm
   script:
-    - echo "Getting AWS credentials for the deployment"
-    # for debugging: If your runner runs in aws, this will already output something sensible!
-    - aws sts get-caller-identity || true
-    - >
-      export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s"
-      $(aws sts assume-role-with-web-identity
-      --role-arn "arn:aws:iam::677474147593:role/gitlab-oidc-xw-batch-deployment"
-      --role-session-name "GitLabRunner-${CI_PROJECT_ID}-${CI_PIPELINE_ID}"
-      --web-identity-token $CI_JOB_JWT_V2
-      --duration-seconds 3600
-      --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]'
-      --output text))
-    - echo "Testing aws access"
-    # This should now output something or something different from the first call!
-    - aws sts get-caller-identity
-    # The actual "deployment", which in our case is just a diff as we do not yet have a deployment AWS account
-    - echo "Running a pseudo deployment (just diff)"
+    - echo "Installing cdk"
     - cd ../gitlab-aws-oidc
     - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
+    - echo "Finished installing cdk"
+    - echo "Installing awscli for deployments"
+    - python3 -m pip install awscli
+    - echo "Finished installing awscli"
+    - *assume-deployment-role-script
+    - echo "Running a deployment of the OIDC stack"
     - cdk synth
-    - cdk diff
+    - cdk deploy --ci --debug --require-approval=never --progress=events
     - echo "Deployment complete"
+
