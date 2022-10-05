@@ -87,6 +87,7 @@ install-xw-batch-packages:
   rules:
     - changes:
         - xw-batch/**/*
+        - .gitlab-ci.yml
   script:
     - cd xw-batch
     - echo "Creating venv"
@@ -106,6 +107,8 @@ mypy:
   rules:
     - changes:
         - xw-batch/**/*
+        - .gitlab-ci.yml
+
   script:
     - *activate-xw-batch-environment
     - echo "Running mypy..."
@@ -128,6 +131,7 @@ isort:
   rules:
     - changes:
         - xw-batch/**/*
+        - .gitlab-ci.yml
   script:
     - *activate-xw-batch-environment
     - echo "Running isort..."
@@ -139,6 +143,7 @@ flake8:
   rules:
     - changes:
         - xw-batch/**/*
+        - .gitlab-ci.yml
   script:
     - *activate-xw-batch-environment
     - echo "Running flake8..."
@@ -150,6 +155,7 @@ pytest:
   rules:
     - changes:
         - xw-batch/**/*
+        - .gitlab-ci.yml
   script:
     - *activate-xw-batch-environment
     - echo "Running pytest..."
@@ -163,6 +169,7 @@ deploy-gitlab-oidc-stack:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
         - gitlab-aws-oidc/**/*
+        - .gitlab-ci.yml
   cache:
     - key:
         files:
@@ -191,6 +198,7 @@ diff-xw-batch-stack:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
         - xw-batch/**/*
+        - .gitlab-ci.yml
   script:
     - *activate-xw-batch-environment
     - *assume-deployment-role-script
