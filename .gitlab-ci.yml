@@ -69,6 +69,7 @@ stages:
   - run-static-checks
   - run-tests
   - deploy-oidc
+  - deploy-infra
 
 ## Jobs
 install-xw-batch-packages:
@@ -174,3 +175,18 @@ deploy-gitlab-oidc-stack:
     - cdk deploy --ci --debug --require-approval=never --progress=events
     - echo "Deployment complete"
 
+diff-xw-batch-stack:
+  stage: deploy-infra
+  rules:
+    # Only main has access to the deployment role!
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - xw-batch/**/*
+  script:
+    - *activate-xw-batch-environment
+    - *assume-deployment-role-script
+    - echo "Running a pseudo deployment of the xw-batch stack (just diff)"
+    - cdk synth
+    # just a diff as the current account is Jans dev account and this would play badly with the actual dev stuff
+    - cdk diff dev/XwBatchStack
+    - echo "Deployment complete"
