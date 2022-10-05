@@ -182,6 +182,8 @@ deploy-gitlab-oidc-stack:
     - echo "Installing cdk"
     - cd gitlab-aws-oidc
     - npm ci --cache $CI_PROJECT_DIR/.cache/npm --prefer-offline
+    - export PATH=$PATH:./node_modules/.bin
+    - cdk --version
     - echo "Finished installing cdk"
     - echo "Installing awscli for deployments"
     - python3 -m pip install awscli
