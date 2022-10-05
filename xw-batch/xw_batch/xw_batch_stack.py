@@ -252,6 +252,12 @@ class XwBatchStack(aws_cdk.Stack):
             auto_delete_objects=stack_auto_delete_objects_in_s3,
         )
 
+        aws_cdk.CfnOutput(
+            self,
+            "out-xw_batch_bucket_athena_query_results_bucket_name",
+            value=self.s3_query_result_bucket.bucket_name,
+        )
+
         # Individual Users
 
         # For users, we throw everything away after 20 days to save space
@@ -273,12 +279,23 @@ class XwBatchStack(aws_cdk.Stack):
             name="all_users",
             description="Workgroup for all users",
             work_group_configuration={
+                # Otherwise one cannot overwrite the output location
+                "enforceWorkGroupConfiguration": False,
                 "resultConfiguration": {
+                    "encryptionConfiguration": {
+                        "encryptionOption": "SSE_S3",
+                    },
                     # I haven't found a way to use per user locations: it's either one workgroup
                     # per user or a shared location...
                     "outputLocation": f"s3://{self.s3_query_result_bucket.bucket_name}/users/shared/",
                 },
             },
+        )
+
+        aws_cdk.CfnOutput(
+            self,
+            "out-athena_user_workgroup",
+            value=self.athena_user_workgroup.name,
         )
 
         # Athena access has three levels
@@ -364,8 +381,15 @@ class XwBatchStack(aws_cdk.Stack):
                         ],
                         "Resource": [
                             f"arn:aws:glue:{region}:{account}:catalog",
-                            f"arn:aws:glue:{region}:{account}:database/user_${{aws:username}}",
-                            f"arn:aws:glue:{region}:{account}:table/user_${{aws:username}}/*",
+                            # We want users to be able to create multiple databases (schema in dbt)
+                            # to allow for proper organizing the transformation results...
+                            # But hiding the databases from each other by adding the ${{aws:username}} part
+                            # does not work: we can have usernames with dots in it which would break the naming
+                            # convention for the databases (and identifiers). Therefor we allow users to see other
+                            # users databases, but still not the underlying data, if they use the proper prefix
+                            # (see next block, where s3 access is specified).
+                            f"arn:aws:glue:{region}:{account}:database/user_*",
+                            f"arn:aws:glue:{region}:{account}:table/user_*/*",
                         ],
                     },
                 ),
@@ -381,7 +405,9 @@ class XwBatchStack(aws_cdk.Stack):
                         ],
                         "Resource": [
                             self.s3_query_result_bucket.bucket_arn,
+                            # user specific
                             f"{self.s3_query_result_bucket.bucket_arn}/users/user_${{aws:username}}/*",
+                            # shared, used per default in the workgroup
                             f"{self.s3_query_result_bucket.bucket_arn}/users/shared/*",
                         ],
                     }
@@ -399,8 +425,8 @@ class XwBatchStack(aws_cdk.Stack):
                         "Condition": {
                             "StringLike": {
                                 "s3:prefix": [
-                                    "/users/user_${aws:username}/*",
-                                    "/users/shared/",
+                                    "users/user_${aws:username}/*",
+                                    "users/shared/*",
                                 ]
                             }
                         },
@@ -456,4 +482,34 @@ class XwBatchStack(aws_cdk.Stack):
         )
         self.users_and_groups.get_group(GROUP_DATA_LAKE_ATHENA_USER).add_managed_policy(
             self.allow_users_athena_access_managed_policy
+        )
+        self.allow_manage_own_access_keys_policy_document = aws_iam.PolicyDocument(
+            statements=[
+                aws_iam.PolicyStatement.from_json(
+                    {
+                        "Sid": "ManageOwnAccessKeys",
+                        "Effect": "Allow",
+                        "Action": [
+                            "iam:CreateAccessKey",
+                            "iam:DeleteAccessKey",
+                            "iam:GetAccessKeyLastUsed",
+                            "iam:GetUser",
+                            "iam:ListAccessKeys",
+                            "iam:UpdateAccessKey",
+                        ],
+                        "Resource": "arn:aws:iam::*:user/${aws:username}",
+                    }
+                )
+            ]
+        )
+        self.allow_manage_own_access_keys_managed_policy = aws_iam.ManagedPolicy(
+            self,
+            "allow_manage_own_access_keys",
+            document=self.allow_manage_own_access_keys_policy_document,
+            # Do not set to not have problems when deploying any changes to the policy. See best practises for cdk
+            # managed_policy_name="AllowManageOwnAccessKeys",
+            description="Allow users to create and update their own access keys.",
+        )
+        self.users_and_groups.get_group(GROUP_DATA_LAKE_ATHENA_USER).add_managed_policy(
+            self.allow_manage_own_access_keys_managed_policy
         )

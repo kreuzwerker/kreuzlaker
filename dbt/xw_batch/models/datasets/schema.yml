@@ -1,0 +1,20 @@
+
+version: 2
+
+models:
+  - name: customer
+    description: "Everything about a customer"
+    columns:
+      - name: customer_id
+        description: "The id of the customer"
+        tests:
+          - not_null
+          - unique
+      - name: journeys
+        description: "Overall number of journeys made by this customer"
+        tests:
+          - not_null
+      - name: amount_cents
+        description: "Lifetime revenue made from this customer in cents"
+        tests:
+          - not_null

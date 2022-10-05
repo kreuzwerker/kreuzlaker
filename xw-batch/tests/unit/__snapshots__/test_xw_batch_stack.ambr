@@ -1,5 +1,15 @@
 # name: test_whole_stack_snapshot
   dict({
+    'Outputs': dict({
+      'outathenauserworkgroup': dict({
+        'Value': 'all_users',
+      }),
+      'outxwbatchbucketathenaqueryresultsbucketname': dict({
+        'Value': dict({
+          'Ref': 'xwbatchbucketathenaqueryresults08D76E1C',
+        }),
+      }),
+    }),
     'Parameters': dict({
       'BootstrapVersion': dict({
         'Default': '/cdk-bootstrap/hnb659fds/version',
@@ -8,6 +18,31 @@
       }),
     }),
     'Resources': dict({
+      'allowmanageownaccesskeysABF6A618': dict({
+        'Properties': dict({
+          'Description': 'Allow users to create and update their own access keys.',
+          'Path': '/',
+          'PolicyDocument': dict({
+            'Statement': list([
+              dict({
+                'Action': list([
+                  'iam:CreateAccessKey',
+                  'iam:DeleteAccessKey',
+                  'iam:GetAccessKeyLastUsed',
+                  'iam:GetUser',
+                  'iam:ListAccessKeys',
+                  'iam:UpdateAccessKey',
+                ]),
+                'Effect': 'Allow',
+                'Resource': 'arn:aws:iam::*:user/${aws:username}',
+                'Sid': 'ManageOwnAccessKeys',
+              }),
+            ]),
+            'Version': '2012-10-17',
+          }),
+        }),
+        'Type': 'AWS::IAM::ManagedPolicy',
+      }),
       'allowusersathenaaccessmanagedpolicy1FE7324E': dict({
         'Properties': dict({
           'Description': 'Allow athena access to users.',
@@ -120,7 +155,7 @@
                         dict({
                           'Ref': 'AWS::AccountId',
                         }),
-                        ':database/user_${aws:username}',
+                        ':database/user_*',
                       ]),
                     ]),
                   }),
@@ -136,7 +171,7 @@
                         dict({
                           'Ref': 'AWS::AccountId',
                         }),
-                        ':table/user_${aws:username}/*',
+                        ':table/user_*/*',
                       ]),
                     ]),
                   }),
@@ -192,8 +227,8 @@
                 'Condition': dict({
                   'StringLike': dict({
                     's3:prefix': list([
-                      '/users/user_${aws:username}/*',
-                      '/users/shared/',
+                      'users/user_${aws:username}/*',
+                      'users/shared/*',
                     ]),
                   }),
                 }),
@@ -317,7 +352,11 @@
           'Description': 'Workgroup for all users',
           'Name': 'all_users',
           'WorkGroupConfiguration': dict({
+            'EnforceWorkGroupConfiguration': False,
             'ResultConfiguration': dict({
+              'EncryptionConfiguration': dict({
+                'EncryptionOption': 'SSE_S3',
+              }),
               'OutputLocation': dict({
                 'Fn::Join': list([
                   '',
@@ -630,6 +669,9 @@
           'ManagedPolicyArns': list([
             dict({
               'Ref': 'allowusersathenaaccessmanagedpolicy1FE7324E',
+            }),
+            dict({
+              'Ref': 'allowmanageownaccesskeysABF6A618',
             }),
           ]),
         }),
