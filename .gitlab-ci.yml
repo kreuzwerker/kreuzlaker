@@ -31,6 +31,10 @@ default:
     - key:
         files:
           - xw-batch/package-lock.json
+        # Needed because only the file content is otherwise used in the hash of the cache and that
+        # can result in the same hash as for the gitlab-aws-oidc/package-lock.json (=same content)
+        # and so overwrite the cached content.
+        prefix: "xw-batch"
       paths:
         - xw-batch/node_modules/
         - .cache/npm
@@ -51,8 +55,14 @@ include:
   - python3 --version  # For debugging
   - echo "Activating environments"
   - source .venv/bin/activate
-  - export PATH=$PATH:./node_modules/.bin # to make the cdk command available
-  - node --version && npm root && command -v cdk && env  # For debugging
+  - export PATH=${PATH}:$(pwd)/node_modules/.bin # to make the cdk command available
+  # Rest is for debugging
+  - env
+  - ls -la . node_modules/.bin .venv/bin/
+  - node --version
+  - npm root
+  - command -v npx
+  - command -v cdk
 
 .assume-deployment-role-script: &assume-deployment-role-script
   - echo "Getting AWS credentials for the deployment"
@@ -175,6 +185,8 @@ deploy-gitlab-oidc-stack:
     - key:
         files:
           - gitlab-aws-oidc/package-lock.json
+        # See above with the default cache for explanation
+        prefix: "gitlab-aws-oidc"
       paths:
         - gitlab-aws-oidc/node_modules/
         - .cache/npm
