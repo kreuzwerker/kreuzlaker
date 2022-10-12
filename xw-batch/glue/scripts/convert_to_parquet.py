@@ -94,14 +94,10 @@ def etl(args: Dict[str, str], glue_context: GlueContext) -> None:
 
     # transform
     # get schema definition
-    table_definition = importlib.import_module(
-        f"business_logic.convert.{target_table_name}"
-    )
+    table_definition = importlib.import_module(f"business_logic.convert.{target_table_name}")
 
     df = table_definition.transform(df, glue_context.spark_session)
-    df = add_column_partition_date(
-        df=df, source_partition_variable=source_partition_var
-    )
+    df = add_column_partition_date(df=df, source_partition_variable=source_partition_var)
 
     # load
     load(

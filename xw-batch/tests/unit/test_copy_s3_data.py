@@ -170,11 +170,7 @@ def test_copy_job_lambda_has_aws_cli(
         "AWS::Lambda::LayerVersion",
         {
             "Content": {
-                "S3Bucket": {
-                    "Fn::Sub": Match.string_like_regexp(
-                        r"\${AWS::AccountId}-\${AWS::Region}"
-                    )
-                },
+                "S3Bucket": {"Fn::Sub": Match.string_like_regexp(r"\${AWS::AccountId}-\${AWS::Region}")},
                 "S3Key": Match.string_like_regexp(r".*\.zip"),
             },
             "Description": "/opt/awscli/aws",
@@ -231,9 +227,7 @@ def test_copy_s3_data_lambda(monkeypatch):
     )
     ret = lambdas.copyjob_for_s3_data.copyjob_for_s3_data.sync_bucket_uri({}, {})
 
-    fake_check_call.assert_called_with(
-        "/opt/awscli/aws s3 sync s3://source/a s3://target/b", shell=True
-    )
+    fake_check_call.assert_called_with("/opt/awscli/aws s3 sync s3://source/a s3://target/b", shell=True)
     assert ret == {
         "statusCode": 200,
         "headers": {"Content-Type": "text/plain"},

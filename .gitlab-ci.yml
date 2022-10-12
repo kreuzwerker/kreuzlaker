@@ -1,6 +1,12 @@
 variables:
   # Configure to use whatever the gitlab OIDC stack defines
   DEPLOYMENT_ROLE_ARN: arn:aws:iam::677474147593:role/gitlab-oidc-xw-batch-deployment
+  # For the ECR repo: The role above needs access to it!
+  DBT_ECR_AWS_REGION: eu-central-1
+  DBT_ECR_AWS_ACCOUNT_ID: 677474147593
+  DBT_ECR_APP_NAME: dbt-run
+  # TODO: change this on a real prod to "latest" (or change the cdk definition of the fargate task)
+  DBT_ECR_IMAGE_TAG: inactive
   # Change pip's cache directory to be inside the project directory since we can
   # only cache local items.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -89,6 +95,7 @@ stages:
   - run-tests
   - deploy-oidc
   - deploy-infra
+  - deploy-dbt
 
 ## Jobs
 install-xw-batch-packages:
@@ -221,4 +228,35 @@ diff-xw-batch-stack:
     - cdk synth
     # just a diff as the current account is Jans dev account and this would play badly with the actual dev stuff
     - cdk diff dev/XwBatchStack
+    - echo "Deployment complete"
+
+deploy-dbt:
+  stage: deploy-dbt
+  rules:
+    # Only main has access to the deployment role!
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - dbt/**/*
+        - .gitlab-ci.yml
+  cache: []
+  image:
+    # We want the aws cli v2, which has no way to install it with pip :-(
+    name: amazon/aws-cli
+    entrypoint: [ "" ]
+  before_script:
+    - amazon-linux-extras install docker
+    - aws --version
+    - docker --version
+  script:
+    # We have aws cli via the docker image and don't need cdk, so no need to activate the venv
+    - *assume-deployment-role-script
+    - echo "Running a pseudo deployment of dbt using an inactive tag"
+    # No activate-xw-batch-environment, so we are still in the repo root
+    - cd dbt
+    - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+    - export REGISTRY_URL=${DBT_ECR_AWS_ACCOUNT_ID}.dkr.ecr.${DBT_ECR_AWS_REGION}.amazonaws.com
+    - export IMG=${REGISTRY_URL}/${DBT_ECR_APP_NAME}:${DBT_ECR_IMAGE_TAG}
+    - aws ecr get-login-password --region ${DBT_ECR_AWS_REGION} | docker login --username AWS --password-stdin "${REGISTRY_URL}"
+    - docker build -t "${IMG}" .
+    - docker push "${IMG}"
     - echo "Deployment complete"

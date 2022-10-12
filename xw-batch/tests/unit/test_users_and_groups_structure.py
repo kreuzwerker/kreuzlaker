@@ -35,9 +35,7 @@ def test_org_users_and_groups_structure(
             "GroupName": "ExampleGroup",
         },
     )
-    resolved_wanted_policy_arn = ouag_stack.resolve(
-        ouag_stack.ouag.policy_allow_password_changes.managed_policy_arn
-    )
+    resolved_wanted_policy_arn = ouag_stack.resolve(ouag_stack.ouag.policy_allow_password_changes.managed_policy_arn)
     ouag_template.has_resource_properties(
         "AWS::IAM::User",
         {

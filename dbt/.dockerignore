@@ -1,0 +1,6 @@
+# Should start empty (will already be filled during image creation, but that's ok...
+*/logs/
+# Compiled dbt files -> should be compiled within the container on dbt run
+*/target/
+# These will be installed during image creation
+*/dbt_packages/

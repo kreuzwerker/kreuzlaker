@@ -1,0 +1,37 @@
+config:
+  send_anonymous_usage_stats: false
+  write_json: true
+
+xw_batch:
+  outputs:
+    prod:
+      # credentials come via the normal aws credential chain, so whatever is running this needs to make
+      # credentials available so that awscli can access them
+      # Database is the default glue data catalog (all lowercase)
+      database: awsdatacatalog
+      region_name: eu-central-1
+      # The prefix on the databses: prod_prep and prod_datasets
+      schema: prod
+      # uses the s3 space as defined in the workgroup
+      s3_staging_dir: ""
+      work_group: dbt_prod
+      type: athena
+      # every failure should result in an abort of the run
+      num_retries: 1
+      # in seconds, lower means faster runs as we see the query end earlier
+      poll_interval: 1
+      # On prod we have 2 vCPU, but these will not do much as the work is done on athena
+      threads: 4
+    docker:
+      # for when you want to use it locally
+      schema: user_docker
+      # uses the s3 space as defined in the workgroup
+      s3_staging_dir: ""
+      work_group: all_users
+      database: awsdatacatalog
+      region_name: eu-central-1
+      type: athena
+      num_retries: 1
+      poll_interval: 1
+      threads: 4
+  target: docker

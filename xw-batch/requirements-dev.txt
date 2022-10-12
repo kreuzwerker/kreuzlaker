@@ -11,6 +11,9 @@ isort
 flake8
 mypy
 
+# Easier handling of nested dicts
+glom
+
 # https://github.com/emcpow2/awslambdaric-stubs
 awslambdaric-stubs
 boto3-stubs[all]

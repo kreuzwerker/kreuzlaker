@@ -73,13 +73,9 @@ class CopyS3Data(Construct):
                 year="*",
             ),
         )
-        self.synchron_lambda_rule.add_target(
-            aws_events_targets.LambdaFunction(self.copy_data_lambda)
-        )
+        self.synchron_lambda_rule.add_target(aws_events_targets.LambdaFunction(self.copy_data_lambda))
         # AWS CLI will be installed under /opt/awscli/aws
-        self.copy_data_lambda.add_layers(
-            lambda_layer_awscli.AwsCliLayer(self, "AwsCliLayer")
-        )
+        self.copy_data_lambda.add_layers(lambda_layer_awscli.AwsCliLayer(self, "AwsCliLayer"))
 
         self.target_bucket.grant_read_write(self.copy_data_lambda)
 
@@ -97,6 +93,4 @@ class CopyS3Data(Construct):
             ],
         )
 
-        self.copy_data_lambda.add_to_role_policy(
-            self.allow_read_access_to_source_bucket_statement
-        )
+        self.copy_data_lambda.add_to_role_policy(self.allow_read_access_to_source_bucket_statement)

@@ -8,6 +8,7 @@ export interface GitlabAWSOIDCStackProps extends StackProps {
     allowedRepoToPush: string;
     allowedBranchesToPush: string[];
     gitlabHost: string;
+    thumbprints: string[];
 }
 
 export class GitlabAWSOIDCStack extends Stack {
@@ -15,7 +16,7 @@ export class GitlabAWSOIDCStack extends Stack {
 
     constructor(scope: Construct, id: string, props: GitlabAWSOIDCStackProps) {
         super(scope, id, props);
-        const {projectName, allowedRepoToPush, allowedBranchesToPush, gitlabHost} = props;
+        const {projectName, allowedRepoToPush, allowedBranchesToPush, gitlabHost, thumbprints} = props;
 
         const gitlabOIDCProvider = new iam.OpenIdConnectProvider(
             this,
@@ -24,6 +25,7 @@ export class GitlabAWSOIDCStack extends Stack {
                 // See https://docs.gitlab.com/ee/ci/cloud_services/aws/
                 url: `https://${gitlabHost}`,
                 clientIds: [`https://${gitlabHost}`],
+                thumbprints: thumbprints,
             }
         );
 
@@ -64,6 +66,29 @@ export class GitlabAWSOIDCStack extends Stack {
                         // this has full administrator access!
                         // "arn:aws:iam::*:role/cdk-*-cfn-exec-role-*",
                     ]
+                }
+            )
+        )
+
+        // for pushing a docker image to the corresponding ECR repo
+        // https://docs.aws.amazon.com/AmazonECR/latest/userguide/image-push.html
+        this.gitlabPipelineRole.addToPolicy(iam.PolicyStatement.fromJson({
+                    "Effect": "Allow",
+                    "Action": [
+                        "ecr:CompleteLayerUpload",
+                        "ecr:UploadLayerPart",
+                        "ecr:InitiateLayerUpload",
+                        "ecr:BatchCheckLayerAvailability",
+                        "ecr:PutImage"
+                    ],
+                    "Resource": `arn:aws:ecr:${this.region}:${this.account}:repository/dbt-run`
+                }
+            )
+        );
+        this.gitlabPipelineRole.addToPolicy(iam.PolicyStatement.fromJson({
+                    "Effect": "Allow",
+                    "Action": "ecr:GetAuthorizationToken",
+                    "Resource": "*"
                 }
             )
         )

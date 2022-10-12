@@ -45,9 +45,7 @@ dev_stage = XwDataStage(
     # the env variables are set by the cdk script and are taken from what is configured in
     # your currently active aws profile
     # For more information on the env argument: https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    env=cdk.Environment(
-        account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
-    ),
+    env=cdk.Environment(account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")),
     keep_data_resources_on_destroy=False,
 )
 add_users_on_dev(dev_stage.batch_stack.users_and_groups)
