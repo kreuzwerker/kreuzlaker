@@ -28,7 +28,7 @@ class XwBatchStack(aws_cdk.Stack):
         scope: Construct,
         construct_id: str,
         *,
-        keep_data_resources_on_destroy: bool = True,
+        force_delete_flag: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -36,11 +36,9 @@ class XwBatchStack(aws_cdk.Stack):
         region = aws_cdk.Stack.of(self).region
         account = aws_cdk.Stack.of(self).account
 
-        stack_removal_policy = (
-            aws_cdk.RemovalPolicy.RETAIN if keep_data_resources_on_destroy else aws_cdk.RemovalPolicy.DESTROY
-        )
+        stack_removal_policy = aws_cdk.RemovalPolicy.DESTROY if force_delete_flag else aws_cdk.RemovalPolicy.RETAIN
         # the argument can only be non-None when we DESTROY the bucket
-        stack_auto_delete_objects_in_s3 = None if keep_data_resources_on_destroy else True
+        stack_auto_delete_objects_in_s3 = True if force_delete_flag else None
 
         # s3 bucket for raw data
         self.s3_raw_bucket = aws_s3.Bucket(
@@ -275,6 +273,7 @@ class XwBatchStack(aws_cdk.Stack):
                     "outputLocation": f"s3://{self.s3_query_result_bucket.bucket_name}/users/shared/",
                 },
             },
+            recursive_delete_option=force_delete_flag,
         )
 
         aws_cdk.CfnOutput(
@@ -372,6 +371,7 @@ class XwBatchStack(aws_cdk.Stack):
                     "outputLocation": f"s3://{self.s3_query_result_bucket.bucket_name}/prod/",
                 },
             },
+            recursive_delete_option=force_delete_flag,
         )
 
         aws_cdk.CfnOutput(
