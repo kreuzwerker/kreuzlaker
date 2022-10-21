@@ -238,17 +238,15 @@ def test_glue_convert_job_for_scoofy_example_data(
 
 
 @pytest.mark.parametrize(
-    "keep_data_resources_on_destroy, expected_policy, match_tags",
+    "force_delete_flag, expected_policy, match_tags",
     [
-        (True, "Retain", False),
-        (False, "Delete", True),
+        (True, "Delete", True),
+        (False, "Retain", False),
     ],
 )
-def test_all_s3_buckets_honour_stack_removal_policy(
-    keep_data_resources_on_destroy: bool, expected_policy: str, match_tags: bool
-):
+def test_all_s3_buckets_honour_stack_removal_policy(force_delete_flag: bool, expected_policy: str, match_tags: bool):
     app = aws_cdk.App()
-    stack = XwBatchStack(app, "xw-batch", keep_data_resources_on_destroy=keep_data_resources_on_destroy)
+    stack = XwBatchStack(app, "xw-batch", force_delete_flag=force_delete_flag)
     template = Template.from_stack(stack)
 
     for name, resource in template.find_resources(type="AWS::S3::Bucket").items():
@@ -257,6 +255,21 @@ def test_all_s3_buckets_honour_stack_removal_policy(
         assert resource["UpdateReplacePolicy"] == expected_policy
         if match_tags:
             assert {"Key": "aws-cdk:auto-delete-objects", "Value": "true"} in resource["Properties"]["Tags"]
+
+
+@pytest.mark.parametrize(
+    "force_delete_flag",
+    [
+        True,
+        False,
+    ],
+)
+def test_athena_workgroups_honor_removal_policy(force_delete_flag: bool):
+    app = aws_cdk.App()
+    stack = XwBatchStack(app, "xw-batch", force_delete_flag=force_delete_flag)
+    template = Template.from_stack(stack)
+    for name, resource in template.find_resources(type="AWS::Athena::WorkGroup").items():
+        assert resource["Properties"]["RecursiveDeleteOption"] == force_delete_flag
 
 
 def _join_arn_ref(arn_ref: dict, add_on: str):
