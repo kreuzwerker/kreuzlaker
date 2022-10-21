@@ -264,12 +264,11 @@ def test_all_s3_buckets_honour_stack_removal_policy(force_delete_flag: bool, exp
         False,
     ],
 )
-def test_athena_workgroup_removal_policy(force_delete_flag: bool):
+def test_athena_workgroups_honor_removal_policy(force_delete_flag: bool):
     app = aws_cdk.App()
     stack = XwBatchStack(app, "xw-batch", force_delete_flag=force_delete_flag)
     template = Template.from_stack(stack)
     for name, resource in template.find_resources(type="AWS::Athena::WorkGroup").items():
-        print(resource["Properties"])
         assert resource["Properties"]["RecursiveDeleteOption"] == force_delete_flag
 
 
