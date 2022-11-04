@@ -5,7 +5,7 @@
 ```bash
 brew install git make python@3.10 node # all the rest gets installed into node.js/python environments
 git clone git@gitlab.kreuzwerker.de:engineering/data-engineering/xw-data-toolkit.git
-cd xw-data-toolkit
+cd xw-data-toolkit/xw-batch
 # Setup all required node.js and python packages in environments
 make install-packages # only deploying via cdk 
 make install-dev-packages # for developing (deploy + test + lint)
