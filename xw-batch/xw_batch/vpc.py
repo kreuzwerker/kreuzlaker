@@ -1,9 +1,9 @@
 from aws_cdk.aws_ec2 import (
-    Vpc,
-    SubnetType,
-    InterfaceVpcEndpointAwsService,
     GatewayVpcEndpointAwsService,
     GatewayVpcEndpointOptions,
+    InterfaceVpcEndpointAwsService,
+    SubnetType,
+    Vpc,
 )
 from constructs import Construct
 

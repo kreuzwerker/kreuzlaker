@@ -1,13 +1,13 @@
 import dataclasses
 
 import aws_cdk
-from aws_cdk import aws_applicationautoscaling, aws_athena, aws_ecr, aws_ecs, aws_ecs_patterns, aws_glue, aws_ec2 as ec2
+from aws_cdk import aws_applicationautoscaling, aws_athena
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecr, aws_ecs, aws_ecs_patterns, aws_glue
 from aws_cdk import aws_glue_alpha as glue
 from aws_cdk import aws_iam, aws_s3, aws_s3_assets
-
 from constructs import Construct
 
-from .vpc import XwVpc
 from .copy_s3_data import CopyS3Data
 from .users_and_groups import (
     GROUP_DATA_LAKE_ATHENA_USER,
@@ -15,6 +15,7 @@ from .users_and_groups import (
     OrgUsersAndGroups,
     create_org_groups,
 )
+from .vpc import XwVpc
 
 
 class XwBatchStack(aws_cdk.Stack):
