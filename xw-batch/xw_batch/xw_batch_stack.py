@@ -16,8 +16,6 @@ from .users_and_groups import (
     create_org_groups,
 )
 
-from .superset_docker import Superset
-
 
 class XwBatchStack(aws_cdk.Stack):
     def __init__(
@@ -428,8 +426,6 @@ class XwBatchStack(aws_cdk.Stack):
         )
 
         self.dbt_runner_task.task_definition.task_role.add_managed_policy(self.allow_prod_athena_access_managed_policy)
-
-        # Superset(self, "Superset", vpc=vpc)
 
 
 def create_policy_document_for_athena_principal(
