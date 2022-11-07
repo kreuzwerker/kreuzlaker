@@ -1,18 +1,13 @@
 import dataclasses
 
 import aws_cdk
-from aws_cdk import (
-    aws_applicationautoscaling,
-    aws_athena,
-    aws_ecr,
-    aws_ecs,
-    aws_ecs_patterns,
-    aws_glue,
-)
+from aws_cdk import aws_applicationautoscaling, aws_athena, aws_ecr, aws_ecs, aws_ecs_patterns, aws_glue, aws_ec2 as ec2
 from aws_cdk import aws_glue_alpha as glue
 from aws_cdk import aws_iam, aws_s3, aws_s3_assets
+
 from constructs import Construct
 
+from .vpc import XwVpc
 from .copy_s3_data import CopyS3Data
 from .users_and_groups import (
     GROUP_DATA_LAKE_ATHENA_USER,
@@ -20,6 +15,8 @@ from .users_and_groups import (
     OrgUsersAndGroups,
     create_org_groups,
 )
+
+from .superset_docker import Superset
 
 
 class XwBatchStack(aws_cdk.Stack):
@@ -35,6 +32,7 @@ class XwBatchStack(aws_cdk.Stack):
 
         region = aws_cdk.Stack.of(self).region
         account = aws_cdk.Stack.of(self).account
+        vpc = XwVpc(self, "XwBatchVpc").get_vpc()
 
         stack_removal_policy = aws_cdk.RemovalPolicy.DESTROY if force_delete_flag else aws_cdk.RemovalPolicy.RETAIN
         # the argument can only be non-None when we DESTROY the bucket
@@ -405,6 +403,7 @@ class XwBatchStack(aws_cdk.Stack):
         self.dbt_runner_task = aws_ecs_patterns.ScheduledFargateTask(
             self,
             id="dbtScheduledFargateTask",
+            vpc=vpc,
             scheduled_fargate_task_image_options=aws_ecs_patterns.ScheduledFargateTaskImageOptions(
                 # Latest => a revert will be a git revert + push!
                 image=aws_ecs.ContainerImage.from_ecr_repository(self.dbt_run_repository, tag="latest"),
@@ -424,10 +423,13 @@ class XwBatchStack(aws_cdk.Stack):
                 week_day="*",
                 year="*",
             ),
+            subnet_selection=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             platform_version=aws_ecs.FargatePlatformVersion.LATEST,  # type: ignore
         )
 
         self.dbt_runner_task.task_definition.task_role.add_managed_policy(self.allow_prod_athena_access_managed_policy)
+
+        # Superset(self, "Superset", vpc=vpc)
 
 
 def create_policy_document_for_athena_principal(

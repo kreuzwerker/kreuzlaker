@@ -33,7 +33,7 @@ diff: .venv/install-packages-stamp node_modules/install-packages-stamp  ## Run c
 
 .PHONY: destroy
 destroy: .venv/install-packages-stamp node_modules/install-packages-stamp  ## Run cdk destroy
-	node_modules/.bin/cdk destroy
+	node_modules/.bin/cdk destroy --all
 
 # idempotent, but quite long -> need to be run manually
 .PHONY: bootstrap
