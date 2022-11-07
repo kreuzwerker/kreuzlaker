@@ -1,14 +1,9 @@
 import dataclasses
 
 import aws_cdk
-from aws_cdk import (
-    aws_applicationautoscaling,
-    aws_athena,
-    aws_ecr,
-    aws_ecs,
-    aws_ecs_patterns,
-    aws_glue,
-)
+from aws_cdk import aws_applicationautoscaling, aws_athena
+from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecr, aws_ecs, aws_ecs_patterns, aws_glue
 from aws_cdk import aws_glue_alpha as glue
 from aws_cdk import aws_iam, aws_s3, aws_s3_assets
 from constructs import Construct
@@ -20,6 +15,7 @@ from .users_and_groups import (
     OrgUsersAndGroups,
     create_org_groups,
 )
+from .vpc import XwVpc
 
 
 class XwBatchStack(aws_cdk.Stack):
@@ -28,19 +24,18 @@ class XwBatchStack(aws_cdk.Stack):
         scope: Construct,
         construct_id: str,
         *,
-        keep_data_resources_on_destroy: bool = True,
+        force_delete_flag: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         region = aws_cdk.Stack.of(self).region
         account = aws_cdk.Stack.of(self).account
+        vpc = XwVpc(self, "XwBatchVpc").get_vpc()
 
-        stack_removal_policy = (
-            aws_cdk.RemovalPolicy.RETAIN if keep_data_resources_on_destroy else aws_cdk.RemovalPolicy.DESTROY
-        )
+        stack_removal_policy = aws_cdk.RemovalPolicy.DESTROY if force_delete_flag else aws_cdk.RemovalPolicy.RETAIN
         # the argument can only be non-None when we DESTROY the bucket
-        stack_auto_delete_objects_in_s3 = None if keep_data_resources_on_destroy else True
+        stack_auto_delete_objects_in_s3 = True if force_delete_flag else None
 
         # s3 bucket for raw data
         self.s3_raw_bucket = aws_s3.Bucket(
@@ -275,6 +270,7 @@ class XwBatchStack(aws_cdk.Stack):
                     "outputLocation": f"s3://{self.s3_query_result_bucket.bucket_name}/users/shared/",
                 },
             },
+            recursive_delete_option=force_delete_flag,
         )
 
         aws_cdk.CfnOutput(
@@ -372,6 +368,7 @@ class XwBatchStack(aws_cdk.Stack):
                     "outputLocation": f"s3://{self.s3_query_result_bucket.bucket_name}/prod/",
                 },
             },
+            recursive_delete_option=force_delete_flag,
         )
 
         aws_cdk.CfnOutput(
@@ -405,6 +402,7 @@ class XwBatchStack(aws_cdk.Stack):
         self.dbt_runner_task = aws_ecs_patterns.ScheduledFargateTask(
             self,
             id="dbtScheduledFargateTask",
+            vpc=vpc,
             scheduled_fargate_task_image_options=aws_ecs_patterns.ScheduledFargateTaskImageOptions(
                 # Latest => a revert will be a git revert + push!
                 image=aws_ecs.ContainerImage.from_ecr_repository(self.dbt_run_repository, tag="latest"),
@@ -424,6 +422,7 @@ class XwBatchStack(aws_cdk.Stack):
                 week_day="*",
                 year="*",
             ),
+            subnet_selection=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             platform_version=aws_ecs.FargatePlatformVersion.LATEST,  # type: ignore
         )
 

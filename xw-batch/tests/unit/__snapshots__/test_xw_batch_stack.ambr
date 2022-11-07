@@ -1103,6 +1103,7 @@
         'Properties': dict({
           'Description': 'Workgroup for the dbt prod usage',
           'Name': 'dbt_prod',
+          'RecursiveDeleteOption': False,
           'WorkGroupConfiguration': dict({
             'EnforceWorkGroupConfiguration': False,
             'ResultConfiguration': dict({
@@ -1130,6 +1131,7 @@
         'Properties': dict({
           'Description': 'Workgroup for all users',
           'Name': 'all_users',
+          'RecursiveDeleteOption': False,
           'WorkGroupConfiguration': dict({
             'EnforceWorkGroupConfiguration': False,
             'ResultConfiguration': dict({

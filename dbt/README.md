@@ -1,5 +1,9 @@
 # xw-batch dbt - dbt transformation for the xw batch stack
 
+## Requirements
+
+- [Poetry](https://python-poetry.org/)
+
 ### Initial Setup
 
 * Install dbt with poetry: `poetry install` and activate the venv: `poetry shell` (dbt installed via brew will not work
